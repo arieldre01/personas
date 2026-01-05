@@ -1,6 +1,7 @@
 'use client';
 
 import { Persona } from '@/lib/personas';
+import { CustomPersona } from '@/lib/custom-personas';
 import { PersonaCard } from './PersonaCard';
 import { SkeletonGrid } from './ui/skeleton';
 
@@ -10,6 +11,8 @@ interface PersonaGridProps {
   isLoading?: boolean;
   focusedIndex?: number;
   onFocusChange?: (index: number) => void;
+  onEditPersona?: (persona: CustomPersona) => void;
+  onDeletePersona?: (id: string) => void;
 }
 
 export function PersonaGrid({ 
@@ -18,6 +21,8 @@ export function PersonaGrid({
   isLoading = false,
   focusedIndex = -1,
   onFocusChange,
+  onEditPersona,
+  onDeletePersona,
 }: PersonaGridProps) {
   if (isLoading) {
     return <SkeletonGrid count={8} />;
@@ -40,6 +45,8 @@ export function PersonaGrid({
             onClick={onSelectPersona}
             isFocused={focusedIndex === index}
             onFocus={() => onFocusChange?.(index)}
+            onEdit={onEditPersona}
+            onDelete={onDeletePersona}
           />
         </div>
       ))}
