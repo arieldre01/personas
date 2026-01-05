@@ -41,7 +41,13 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    const generatedResponse = data.response?.trim() || '';
+    let generatedResponse = data.response?.trim() || '';
+    
+    // Remove surrounding quotes if the model wrapped the response
+    if ((generatedResponse.startsWith('"') && generatedResponse.endsWith('"')) ||
+        (generatedResponse.startsWith("'") && generatedResponse.endsWith("'"))) {
+      generatedResponse = generatedResponse.slice(1, -1);
+    }
 
     return NextResponse.json({ response: generatedResponse });
   } catch (error) {
