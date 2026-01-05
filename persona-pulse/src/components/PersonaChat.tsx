@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Persona, generationColors } from '@/lib/personas';
-import { Send, Loader2 } from 'lucide-react';
+import { getFullPersonaContext } from '@/lib/persona-prompts';
+import { Send, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { getPersonaImage } from '@/lib/personas';
 
 interface Message {
@@ -17,90 +18,6 @@ interface PersonaChatProps {
   persona: Persona;
 }
 
-// Mock responses based on persona characteristics
-function generatePersonaResponse(persona: Persona, userMessage: string): string {
-  const lowerMessage = userMessage.toLowerCase();
-  
-  // Persona-specific responses based on their psychology
-  const responses: Record<string, string[]> = {
-    maya: [
-      "Look, I appreciate you reaching out, but can you give me the bullet points? I have a team meeting in 10 minutes.",
-      "That's interesting, but how does this help me communicate better with my team?",
-      "I'm constantly in 'sandwich mode' - pressure from above and below. Just tell me what I need to know.",
-      "Send me a pre-brief kit if you want me to cascade this to my team properly.",
-    ],
-    ben: [
-      "Interesting perspective, but where's the data to back this up?",
-      "I need to see the metrics before I can buy into this. What's the ROI?",
-      "Skip the emotional appeal - give me the strategic rationale.",
-      "This sounds like corporate fluff. Can you quantify the impact?",
-    ],
-    oliver: [
-      "Mate, if this doesn't work on my mobile, I'm not reading it.",
-      "I'm out in the field most of the day. Can you send this as a push notification?",
-      "Another VPN login just to read an update? Come on...",
-      "Keep it short - I'm between sites right now.",
-    ],
-    priya: [
-      "This is a lot to take in... can you break it down for me?",
-      "How does this impact my role specifically? I want to make sure I'm growing.",
-      "Do you have a video or visual that explains this? That would help me understand better.",
-      "I just want to make sure I'm doing the right thing. Is this something I should prioritize?",
-    ],
-    anna: [
-      "We never got this information on our side. The acquired teams are always last to know.",
-      "Half the links don't work with our access rights. It's frustrating.",
-      "I'm still trying to figure out the acronyms you all use. Can you explain?",
-      "We just want to feel like part of the company, not second-class employees.",
-    ],
-    sahil: [
-      "This would be great to discuss at the next town hall! Any chance we can make it interactive?",
-      "I love connecting with people on this stuff. Can we set up a social event around it?",
-      "Recognition is important to me - will there be any shoutouts for people who contribute?",
-      "Let's make this fun! How can we gamify it?",
-    ],
-    ido: [
-      "You know, I've been here 15 years. I've seen initiatives come and go.",
-      "Can we just have an honest conversation about this? No corporate spin?",
-      "I prefer to discuss these things face-to-face, not through another email.",
-      "Do they genuinely want my input, or is this just another checkbox exercise?",
-    ],
-    alex: [
-      "What's in it for me? How does this help me close more deals?",
-      "Time is money. Give me the bottom line up front.",
-      "Do you have any competitor intel on this? That's what I really need.",
-      "Skip the newsletter format - just give me the sales tools.",
-    ],
-  };
-
-  const personaResponses = responses[persona.id] || [
-    "That's an interesting point. Let me think about it.",
-    "I see what you mean. How would this work in practice?",
-    "Thanks for sharing. What else should I know?",
-  ];
-
-  // Check for keywords to give more relevant responses
-  if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
-    return `Hi there! I'm ${persona.name}, ${persona.role}. ${persona.quote} How can I help you today?`;
-  }
-  
-  if (lowerMessage.includes('help') || lowerMessage.includes('question')) {
-    return `Sure, I'll try to help. Just remember - ${persona.psychology.motivation.toLowerCase()}. What do you need?`;
-  }
-
-  if (lowerMessage.includes('stress') || lowerMessage.includes('frustrat')) {
-    return `You're touching on something I deal with daily. ${persona.psychology.stress} It's not easy, but we manage.`;
-  }
-
-  if (lowerMessage.includes('communicat') || lowerMessage.includes('prefer')) {
-    const dos = persona.communication.do.join(', ');
-    return `When communicating with me, please: ${dos}. That really helps me engage with the content.`;
-  }
-
-  // Random response from persona's pool
-  return personaResponses[Math.floor(Math.random() * personaResponses.length)];
-}
-
 export function PersonaChat({ persona }: PersonaChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -111,8 +28,11 @@ export function PersonaChat({ persona }: PersonaChatProps) {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [useOllama, setUseOllama] = useState(true);
+  const [ollamaStatus, setOllamaStatus] = useState<'checking' | 'connected' | 'offline'>('checking');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const colors = generationColors[persona.generation];
+  const personaContext = getFullPersonaContext(persona);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -121,6 +41,60 @@ export function PersonaChat({ persona }: PersonaChatProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Check Ollama status on mount
+  useEffect(() => {
+    checkOllamaStatus();
+  }, []);
+
+  const checkOllamaStatus = async () => {
+    try {
+      const response = await fetch('http://localhost:11434/api/tags', {
+        method: 'GET',
+      });
+      if (response.ok) {
+        setOllamaStatus('connected');
+        setUseOllama(true);
+      } else {
+        setOllamaStatus('offline');
+        setUseOllama(false);
+      }
+    } catch {
+      setOllamaStatus('offline');
+      setUseOllama(false);
+    }
+  };
+
+  // Fallback mock response generator
+  const generateMockResponse = (userMessage: string): string => {
+    const lowerMessage = userMessage.toLowerCase();
+    
+    if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
+      return `Hey there! I'm ${persona.name}, ${persona.role}. ${persona.quote} What can I help you with?`;
+    }
+    
+    if (lowerMessage.includes('stress') || lowerMessage.includes('frustrat')) {
+      return `You're touching on something I deal with daily. ${persona.psychology.stress} It's not always easy.`;
+    }
+
+    if (lowerMessage.includes('communicat') || lowerMessage.includes('prefer') || lowerMessage.includes('talk')) {
+      const dos = persona.communication.do.slice(0, 2).join(' and ');
+      return `When it comes to communication, I really appreciate when people ${dos.toLowerCase()}. That makes a big difference for me.`;
+    }
+
+    if (lowerMessage.includes('motivat') || lowerMessage.includes('drive')) {
+      return `What keeps me going? ${persona.psychology.motivation}. That's what gets me out of bed in the morning.`;
+    }
+
+    // Generic responses based on persona
+    const responses = [
+      `That's an interesting point. From my perspective as a ${persona.role}, I'd say it depends on the context.`,
+      `I hear you. ${persona.psychology.motivation} - that's what I always come back to.`,
+      `Good question. You know, ${persona.quote.toLowerCase()}`,
+    ];
+    
+    return responses[Math.floor(Math.random() * responses.length)];
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isTyping) return;
@@ -135,15 +109,45 @@ export function PersonaChat({ persona }: PersonaChatProps) {
     setInput('');
     setIsTyping(true);
 
-    // Simulate typing delay
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
+    let responseText = '';
 
-    const response = generatePersonaResponse(persona, userMessage.content);
-    
+    if (useOllama && ollamaStatus === 'connected') {
+      try {
+        // Build conversation history for context
+        const conversationHistory = messages
+          .map((m) => `${m.role === 'user' ? 'User' : persona.name}: ${m.content}`)
+          .join('\n');
+
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `${conversationHistory}\nUser: ${userMessage.content}`,
+            personaContext,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          responseText = data.response || generateMockResponse(userMessage.content);
+        } else {
+          // Fallback to mock if API fails
+          responseText = generateMockResponse(userMessage.content);
+        }
+      } catch (error) {
+        console.error('Ollama error:', error);
+        responseText = generateMockResponse(userMessage.content);
+      }
+    } else {
+      // Use mock responses
+      await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 800));
+      responseText = generateMockResponse(userMessage.content);
+    }
+
     const personaMessage: Message = {
       id: (Date.now() + 1).toString(),
       role: 'persona',
-      content: response,
+      content: responseText,
     };
 
     setMessages((prev) => [...prev, personaMessage]);
@@ -159,6 +163,36 @@ export function PersonaChat({ persona }: PersonaChatProps) {
 
   return (
     <div className="flex flex-col h-[400px]">
+      {/* Status indicator */}
+      <div className="flex items-center justify-between px-4 py-2 border-b text-xs">
+        <div className="flex items-center gap-2">
+          {ollamaStatus === 'connected' ? (
+            <>
+              <Wifi className="h-3 w-3 text-green-500" />
+              <span className="text-green-600">AI Powered (Ollama)</span>
+            </>
+          ) : ollamaStatus === 'checking' ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+              <span className="text-gray-500">Checking AI...</span>
+            </>
+          ) : (
+            <>
+              <WifiOff className="h-3 w-3 text-amber-500" />
+              <span className="text-amber-600">Mock Mode (Start Ollama for AI)</span>
+            </>
+          )}
+        </div>
+        {ollamaStatus === 'offline' && (
+          <button
+            onClick={checkOllamaStatus}
+            className="text-blue-500 hover:underline"
+          >
+            Retry
+          </button>
+        )}
+      </div>
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
@@ -249,11 +283,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
             )}
           </Button>
         </div>
-        <p className="text-xs text-gray-500 mt-2">
-          This is a simulated conversation. AI integration coming soon!
-        </p>
       </div>
     </div>
   );
 }
-
