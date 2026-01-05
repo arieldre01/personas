@@ -1,10 +1,6 @@
-name: Generate Changelog
+name: Update Changelog on Merge
 
 on:
-  push:
-    branches:
-      - main
-      - master
   pull_request:
     types: [closed]
     branches:
@@ -12,42 +8,54 @@ on:
       - master
 
 jobs:
-  changelog:
-    # Only run on merged PRs or direct pushes
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+  update-changelog:
+    # Only run when PR is actually merged (not just closed)
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for git log
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.base.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Get PR info
+        id: pr_info
+        run: |
+          echo "title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
-      - name: Install Ollama
+      - name: Update CHANGELOG.md
         run: |
-          curl -fsSL https://ollama.com/install.sh | sh
+          PR_TITLE="${{ steps.pr_info.outputs.title }}"
+          PR_NUMBER="${{ steps.pr_info.outputs.number }}"
+          DATE="${{ steps.pr_info.outputs.date }}"
           
-      - name: Start Ollama and pull model
-        run: |
-          # Start Ollama in background
-          ollama serve &
-          sleep 5
+          # Check if CHANGELOG.md exists
+          if [ ! -f CHANGELOG.md ]; then
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "## [Unreleased]" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+          fi
           
-          # Pull the model (phi3:mini is small and fast)
-          ollama pull phi3:mini
+          # Add entry under [Unreleased] section
+          # The PR title should follow conventional commits format (feat:, fix:, etc.)
+          ENTRY="- ${PR_TITLE} (#${PR_NUMBER})"
           
-          # Wait for model to be ready
-          sleep 2
-
-      - name: Generate Changelog
-        run: |
-          python generate_changelog.py
+          # Insert the new entry after the [Unreleased] header
+          sed -i "/## \[Unreleased\]/a\\
+          ${ENTRY}" CHANGELOG.md
+          
+          echo "Added changelog entry: ${ENTRY}"
 
       - name: Commit and push changelog
         run: |
@@ -55,11 +63,10 @@ jobs:
           git config --local user.name "github-actions[bot]"
           
           # Check if CHANGELOG.md was modified
-          if git diff --quiet CHANGELOG.md; then
+          if git diff --quiet CHANGELOG.md 2>/dev/null; then
             echo "No changes to CHANGELOG.md"
           else
             git add CHANGELOG.md
             git commit -m "docs: update CHANGELOG.md [skip ci]"
             git push
           fi
-
