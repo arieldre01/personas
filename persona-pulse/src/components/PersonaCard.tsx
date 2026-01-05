@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Persona, generationColors, getPersonaImage } from '@/lib/personas';
+import { Persona, generationColors, getPersonaImage, getPersonaImagePosition } from '@/lib/personas';
 import { MapPin, Briefcase } from 'lucide-react';
 
 interface PersonaCardProps {
@@ -40,6 +40,7 @@ export function PersonaCard({ persona, onClick }: PersonaCardProps) {
             src={getPersonaImage(persona)}
             alt={persona.name}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            style={{ objectPosition: getPersonaImagePosition(persona) }}
           />
         </div>
 

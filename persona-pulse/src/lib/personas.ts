@@ -305,25 +305,31 @@ export function getPersonaById(id: string): Persona | undefined {
   return personas.find((p) => p.id === id);
 }
 
-// Map persona IDs to their local image files
-const personaImageMap: Record<string, string> = {
-  maya: '/images/personas/Maya_0.png',
-  ben: '/images/personas/Ben_0.png',
-  oliver: '/images/personas/Oliver_0.png',
-  priya: '/images/personas/Priya_slide10_0.png',
-  anna: '/images/personas/Anna_0.png',
-  sahil: '/images/personas/Sahil_0.png',
-  ido: '/images/personas/Ido_0.png',
-  alex: '/images/personas/Alex_0.png',
+// Map persona IDs to their local image files and positioning
+const personaImageMap: Record<string, { src: string; position?: string }> = {
+  maya: { src: '/images/personas/Maya_0.png' },
+  ben: { src: '/images/personas/Ben_0.png' },
+  oliver: { src: '/images/personas/Oliver_0.png' },
+  priya: { src: '/images/personas/Priya_slide10_0.png' },
+  anna: { src: '/images/personas/Anna_0.png' },
+  sahil: { src: '/images/personas/Sahil_0.png' },
+  ido: { src: '/images/personas/Ido_0.png' },
+  alex: { src: '/images/personas/Alex_0.png', position: 'top' }, // Full body shot - focus on face
 };
 
 // Helper function to get image URL for a persona
 export function getPersonaImage(persona: Persona): string {
   // Use local image if available, otherwise fall back to UI Avatars
-  const localImage = personaImageMap[persona.id];
-  if (localImage) {
-    return localImage;
+  const imageData = personaImageMap[persona.id];
+  if (imageData?.src) {
+    return imageData.src;
   }
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(persona.name)}&size=200&background=random&color=fff&bold=true`;
+}
+
+// Helper function to get image position for a persona (for object-position CSS)
+export function getPersonaImagePosition(persona: Persona): string {
+  const imageData = personaImageMap[persona.id];
+  return imageData?.position || 'center';
 }
 

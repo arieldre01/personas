@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Persona, generationColors } from '@/lib/personas';
 import { getFullPersonaContext } from '@/lib/persona-prompts';
 import { Send, Loader2, Wifi, WifiOff } from 'lucide-react';
-import { getPersonaImage } from '@/lib/personas';
+import { getPersonaImage, getPersonaImagePosition } from '@/lib/personas';
 
 interface Message {
   id: string;
@@ -212,6 +212,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
                   src={getPersonaImage(persona)}
                   alt={persona.name}
                   className="h-full w-full object-cover"
+                  style={{ objectPosition: getPersonaImagePosition(persona) }}
                 />
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-white text-sm font-bold">
@@ -244,6 +245,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
                 src={getPersonaImage(persona)}
                 alt={persona.name}
                 className="h-full w-full object-cover"
+                style={{ objectPosition: getPersonaImagePosition(persona) }}
               />
             </div>
             <div className={`rounded-2xl rounded-bl-md px-4 py-3 ${colors.bg} border border-gray-100 dark:border-gray-700`}>
