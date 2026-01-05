@@ -310,7 +310,7 @@ const personaImageMap: Record<string, string> = {
   maya: '/images/personas/Maya_0.png',
   ben: '/images/personas/Ben_0.png',
   oliver: '/images/personas/Oliver_0.png',
-  priya: '', // No image extracted - will use fallback
+  priya: '/images/personas/Priya_slide10_0.png',
   anna: '/images/personas/Anna_0.png',
   sahil: '/images/personas/Sahil_0.png',
   ido: '/images/personas/Ido_0.png',
