@@ -21,7 +21,7 @@ interface PersonaFinderProps {
 }
 
 export function PersonaFinder({ open, onClose, onPersonaMatch }: PersonaFinderProps) {
-  const [activeTab, setActiveTab] = useState<'guided' | 'freeform'>('guided');
+  const [activeTab, setActiveTab] = useState<'guided' | 'freeform'>('freeform');
   const [key, setKey] = useState(0);
 
   const handleReset = () => {
@@ -35,7 +35,7 @@ export function PersonaFinder({ open, onClose, onPersonaMatch }: PersonaFinderPr
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[85vh] max-w-2xl flex flex-col">
+      <DialogContent className="max-h-[85vh] h-[600px] max-w-2xl flex flex-col overflow-hidden">
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
@@ -57,26 +57,26 @@ export function PersonaFinder({ open, onClose, onPersonaMatch }: PersonaFinderPr
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v as 'guided' | 'freeform')}
-          className="flex-1 flex flex-col min-h-0"
+          className="flex-1 flex flex-col min-h-0 overflow-hidden"
         >
           <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
-            <TabsTrigger value="guided" className="flex items-center gap-2">
-              <Compass className="h-4 w-4" />
-              Guided
-            </TabsTrigger>
             <TabsTrigger value="freeform" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
-              Free-form
+              Write Freely
+            </TabsTrigger>
+            <TabsTrigger value="guided" className="flex items-center gap-2">
+              <Compass className="h-4 w-4" />
+              Quick Questions
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 min-h-[400px] overflow-hidden">
-            <TabsContent value="guided" className="h-full mt-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <FinderGuided key={`guided-${key}`} onPersonaMatch={handlePersonaMatch} />
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <TabsContent value="freeform" className="h-full mt-0 data-[state=active]:flex data-[state=active]:flex-col overflow-hidden">
+              <FinderFreeform key={`freeform-${key}`} onPersonaMatch={handlePersonaMatch} />
             </TabsContent>
 
-            <TabsContent value="freeform" className="h-full mt-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <FinderFreeform key={`freeform-${key}`} onPersonaMatch={handlePersonaMatch} />
+            <TabsContent value="guided" className="h-full mt-0 data-[state=active]:flex data-[state=active]:flex-col overflow-hidden">
+              <FinderGuided key={`guided-${key}`} onPersonaMatch={handlePersonaMatch} />
             </TabsContent>
           </div>
         </Tabs>
