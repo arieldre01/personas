@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const OLLAMA_API_URL = process.env.OLLAMA_URL || 'http://localhost:11434/api/generate';
-const MODEL = process.env.OLLAMA_MODEL || 'phi3:mini';
+const MODEL = process.env.OLLAMA_MODEL || 'gemma3:1b';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +25,8 @@ export async function POST(request: NextRequest) {
         options: {
           temperature: 0.8,
           top_p: 0.9,
-          num_predict: 150, // Keep responses concise
+          num_predict: 100, // Shorter = faster
+          num_ctx: 2048, // Smaller context window = faster
         },
       }),
     });
