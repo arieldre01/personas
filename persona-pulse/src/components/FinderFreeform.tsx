@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ChatMessage, Message } from './ChatMessage';
-import { aiService } from '@/lib/ai-service';
-import { Persona } from '@/lib/personas';
-import { Loader2, Sparkles, Send } from 'lucide-react';
+import { Persona, personas, getPersonaById } from '@/lib/personas';
+import { Loader2, Sparkles, Send, Wifi, WifiOff } from 'lucide-react';
 
 interface FinderFreeformProps {
   onPersonaMatch: (persona: Persona) => void;
@@ -17,6 +16,14 @@ export function FinderFreeform({ onPersonaMatch }: FinderFreeformProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [matchedPersona, setMatchedPersona] = useState<Persona | null>(null);
+  const [ollamaConnected, setOllamaConnected] = useState<boolean | null>(null);
+
+  // Check Ollama connection on mount
+  useEffect(() => {
+    fetch('http://localhost:11434/api/tags')
+      .then(res => setOllamaConnected(res.ok))
+      .catch(() => setOllamaConnected(false));
+  }, []);
 
   const handleSubmit = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -31,21 +38,47 @@ export function FinderFreeform({ onPersonaMatch }: FinderFreeformProps) {
     setInput('');
     setIsLoading(true);
 
-    const response = await aiService.analyzeFreeform(
-      [...messages, userMessage],
-      text
-    );
+    try {
+      // Call the persona-match API
+      const response = await fetch('/api/persona-match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userText: text,
+          context: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
+        }),
+      });
 
-    const assistantMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: response.message,
-    };
-
-    setMessages((prev) => [...prev, assistantMessage]);
-
-    if (response.matchedPersona) {
-      setMatchedPersona(response.matchedPersona);
+      if (response.ok) {
+        const data = await response.json();
+        const persona = getPersonaById(data.personaId);
+        
+        if (persona) {
+          const confidencePercent = Math.round(data.confidence * 100);
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: `Based on your description, you strongly align with **${persona.name}** - "${persona.title}"!\n\n"${persona.quote}"\n\n${data.reason}\n\nConfidence: ${confidencePercent}%`,
+          };
+          setMessages((prev) => [...prev, assistantMessage]);
+          setMatchedPersona(persona);
+        }
+      } else {
+        // Fallback to random if API fails
+        const fallbackPersona = personas[Math.floor(Math.random() * personas.length)];
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: `Based on your description, you seem to align with **${fallbackPersona.name}** - "${fallbackPersona.title}"!\n\n"${fallbackPersona.quote}"`,
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+        setMatchedPersona(fallbackPersona);
+      }
+    } catch (error) {
+      console.error('Persona match error:', error);
+      // Fallback
+      const fallbackPersona = personas[0];
+      setMatchedPersona(fallbackPersona);
     }
 
     setIsLoading(false);
@@ -61,6 +94,23 @@ export function FinderFreeform({ onPersonaMatch }: FinderFreeformProps) {
   if (messages.length === 0) {
     return (
       <div className="flex flex-col h-full">
+        {/* AI Status */}
+        <div className="flex items-center justify-center gap-2 py-2 text-xs">
+          {ollamaConnected === null ? (
+            <span className="text-gray-400">Checking AI...</span>
+          ) : ollamaConnected ? (
+            <>
+              <Wifi className="h-3 w-3 text-green-500" />
+              <span className="text-green-600">AI-Powered Matching (Ollama)</span>
+            </>
+          ) : (
+            <>
+              <WifiOff className="h-3 w-3 text-amber-500" />
+              <span className="text-amber-600">Fallback Mode (Start Ollama for AI)</span>
+            </>
+          )}
+        </div>
+
         <div className="flex-1 flex flex-col items-center justify-center py-8 text-center">
           <div className="mb-4 rounded-full bg-teal-100 dark:bg-teal-900/30 p-4">
             <Sparkles className="h-8 w-8 text-teal-600 dark:text-teal-400" />
