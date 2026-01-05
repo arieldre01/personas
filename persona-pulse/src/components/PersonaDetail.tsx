@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Persona, generationColors, getPersonaImage, getPersonaImagePosition } from '@/lib/personas';
 import { PersonaChat } from './PersonaChat';
+import { Breadcrumbs } from './Breadcrumbs';
 import {
   MapPin,
   Briefcase,
@@ -36,6 +37,20 @@ interface PersonaDetailProps {
 export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
   const [activeTab, setActiveTab] = useState<'profile' | 'chat'>('profile');
 
+  // Handle Escape key to close modal
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  }, [onClose]);
+
+  useEffect(() => {
+    if (open) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [open, handleKeyDown]);
+
   if (!persona) return null;
 
   const colors = generationColors[persona.generation];
@@ -43,6 +58,16 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden flex flex-col">
+        {/* Breadcrumbs */}
+        <Breadcrumbs
+          items={[
+            { label: 'Home', onClick: onClose },
+            { label: 'Explore Personas', onClick: onClose },
+            { label: persona.name },
+          ]}
+          persona={persona}
+        />
+
         <DialogHeader className="flex-shrink-0">
           {/* Profile Header */}
           <div className={`-mx-6 -mt-6 mb-4 ${colors.bg} p-6`}>

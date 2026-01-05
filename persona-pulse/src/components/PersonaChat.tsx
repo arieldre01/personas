@@ -348,6 +348,26 @@ export function PersonaChat({ persona }: PersonaChatProps) {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Quick Suggestions */}
+      {messages.length <= 1 && !isTyping && (
+        <div className="px-4 py-2 border-t bg-gray-50 dark:bg-gray-800/50">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Quick questions:</p>
+          <div className="flex flex-wrap gap-2">
+            {getQuickSuggestions(persona).map((suggestion, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setInput(suggestion);
+                }}
+                className={`text-xs px-3 py-1.5 rounded-full border transition-all hover:scale-105 ${colors.bg} ${colors.text} hover:shadow-sm`}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="border-t p-4">
         <div className="flex gap-2">
@@ -375,4 +395,14 @@ export function PersonaChat({ persona }: PersonaChatProps) {
       </div>
     </div>
   );
+}
+
+// Generate quick suggestions based on persona data
+function getQuickSuggestions(persona: Persona): string[] {
+  return [
+    "What stresses you most at work?",
+    "How do you prefer to receive updates?",
+    "What motivates you?",
+    `What's the best way to communicate with you?`,
+  ];
 }

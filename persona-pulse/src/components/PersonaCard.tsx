@@ -8,9 +8,11 @@ import { MapPin, Briefcase } from 'lucide-react';
 interface PersonaCardProps {
   persona: Persona;
   onClick: (persona: Persona) => void;
+  isFocused?: boolean;
+  onFocus?: () => void;
 }
 
-export function PersonaCard({ persona, onClick }: PersonaCardProps) {
+export function PersonaCard({ persona, onClick, isFocused = false, onFocus }: PersonaCardProps) {
   const colors = generationColors[persona.generation];
 
   // Map generation to glow colors
@@ -23,8 +25,20 @@ export function PersonaCard({ persona, onClick }: PersonaCardProps) {
 
   return (
     <Card
-      className={`group cursor-pointer card-hover ${colors.border} border-2 overflow-hidden h-full flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm`}
+      className={`group cursor-pointer card-hover ${colors.border} border-2 overflow-hidden h-full flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm transition-all ${
+        isFocused ? 'ring-2 ring-offset-2 ring-purple-500 dark:ring-purple-400' : ''
+      }`}
       onClick={() => onClick(persona)}
+      onFocus={onFocus}
+      tabIndex={0}
+      role="button"
+      aria-label={`View ${persona.name}'s profile`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick(persona);
+        }
+      }}
     >
       <div className={`${colors.bg} p-4 relative overflow-hidden`}>
         {/* Subtle pattern overlay */}
