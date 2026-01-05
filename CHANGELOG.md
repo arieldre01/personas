@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
+- Improve Persona Finder with free-form writing and keyword matching (#5)
 - feat: add UI/UX upgrades - skeletons, breadcrumbs, suggestions, keybo… (#4)
 - docs: add CHANGELOG.md and fix auto-update workflow (#3)
 
