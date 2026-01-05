@@ -4,7 +4,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Persona, generationColors, getPersonaImage } from '@/lib/personas';
 import { MapPin, Briefcase } from 'lucide-react';
-import Image from 'next/image';
 
 interface PersonaCardProps {
   persona: Persona;
@@ -22,11 +21,11 @@ export function PersonaCard({ persona, onClick }: PersonaCardProps) {
       <div className={`${colors.bg} p-4`}>
         {/* Profile Image */}
         <div className="relative mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full ring-2 ring-white dark:ring-gray-800 shadow-md">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={getPersonaImage(persona)}
             alt={persona.name}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-110"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
           />
         </div>
 

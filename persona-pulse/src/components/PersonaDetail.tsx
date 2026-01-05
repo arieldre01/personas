@@ -21,7 +21,6 @@ import {
   XCircle,
   MessageSquare,
 } from 'lucide-react';
-import Image from 'next/image';
 
 interface PersonaDetailProps {
   persona: Persona | null;
@@ -43,11 +42,11 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
             <div className="flex items-start gap-6">
               {/* Avatar */}
               <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-full ring-4 ring-white dark:ring-gray-800 shadow-lg">
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={getPersonaImage(persona)}
                   alt={persona.name}
-                  fill
-                  className="object-cover"
+                  className="h-full w-full object-cover"
                 />
               </div>
 
