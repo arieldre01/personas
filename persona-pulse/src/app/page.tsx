@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PersonaGrid } from '@/components/PersonaGrid';
@@ -14,6 +14,60 @@ export default function Home() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [finderOpen, setFinderOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+
+  // Calculate grid columns based on screen size (matching the grid layout)
+  const getColumnsCount = () => {
+    if (typeof window === 'undefined') return 4;
+    if (window.innerWidth >= 1280) return 4; // xl
+    if (window.innerWidth >= 1024) return 4; // lg
+    if (window.innerWidth >= 768) return 3;  // md
+    return 2; // default
+  };
+
+  // Keyboard navigation handler
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (detailOpen || finderOpen) return; // Don't navigate when modals are open
+    
+    const cols = getColumnsCount();
+    const total = personas.length;
+    
+    switch (e.key) {
+      case 'ArrowRight':
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev + 1) % total);
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev - 1 + total) % total);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        setFocusedIndex((prev) => {
+          const next = prev + cols;
+          return next >= total ? prev % cols : next;
+        });
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFocusedIndex((prev) => {
+          const next = prev - cols;
+          return next < 0 ? prev + Math.floor((total - 1) / cols) * cols : next;
+        });
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (focusedIndex >= 0 && focusedIndex < total) {
+          handleSelectPersona(personas[focusedIndex]);
+        }
+        break;
+    }
+  }, [detailOpen, finderOpen, focusedIndex]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   useEffect(() => {
     // Check initial preference
@@ -155,9 +209,17 @@ export default function Home() {
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             Click on any persona to explore their profile and start a conversation
           </p>
+          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+            Tip: Use arrow keys to navigate, Enter to select
+          </p>
         </div>
 
-        <PersonaGrid personas={personas} onSelectPersona={handleSelectPersona} />
+        <PersonaGrid 
+          personas={personas} 
+          onSelectPersona={handleSelectPersona}
+          focusedIndex={focusedIndex}
+          onFocusChange={setFocusedIndex}
+        />
       </section>
 
       {/* Footer */}
