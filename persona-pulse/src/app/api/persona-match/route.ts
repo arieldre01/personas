@@ -194,9 +194,77 @@ INSTRUCTIONS:
 3. Respond in this EXACT JSON format (nothing else):
 {"personaId": "id_here", "confidence": 0.85, "reason": "Brief 1-2 sentence explanation"}
 
-The personaId MUST be one of: maya, ben, oliver, priya, anna, sahil, ido, alex
-The confidence should be between 0.5 and 0.95
-Keep the reason brief and focused on the key matching traits.`;
+// Smart keyword-based matching function
+function matchPersonaByKeywords(text: string): { personaId: string | null; confidence: number; reason: string } {
+  const lowerText = text.toLowerCase();
+  
+  // First check if we have meaningful content
+  if (!hasMeaningfulContent(text)) {
+    return {
+      personaId: null,
+      confidence: 0,
+      reason: "I need more information about you to find a match. Please tell me about your job role, how long you've been working, your age group, or whether you work at a desk or in the field.",
+    };
+  }
+  
+  const scores: Record<string, number> = {};
+  
+  // Calculate scores for each persona
+  for (const [personaId, keywordGroups] of Object.entries(personaKeywords)) {
+    scores[personaId] = 0;
+    
+    for (const group of keywordGroups) {
+      for (const keyword of group.keywords) {
+        if (lowerText.includes(keyword.toLowerCase())) {
+          scores[personaId] += group.weight;
+        }
+      }
+    }
+  }
+  
+  // Find the best match
+  const sortedPersonas = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const [topPersonaId, topScore] = sortedPersonas[0];
+  const [, secondScore] = sortedPersonas[1] || [null, 0];
+  
+  // If no keywords matched at all, ask for more info
+  if (topScore === 0) {
+    return {
+      personaId: null,
+      confidence: 0,
+      reason: "I couldn't find enough details to match you. Could you tell me more about your role, experience level, or how you typically work?",
+    };
+  }
+  
+  // Calculate confidence based on score
+  let confidence: number;
+  if (topScore >= 8) {
+    confidence = Math.min(0.92, 0.75 + (topScore - secondScore) * 0.03);
+  } else if (topScore >= 5) {
+    confidence = Math.min(0.80, 0.60 + (topScore - secondScore) * 0.03);
+  } else if (topScore >= 3) {
+    confidence = Math.min(0.65, 0.45 + topScore * 0.05);
+  } else {
+    // Score too low - not confident enough
+    return {
+      personaId: null,
+      confidence: topScore * 0.15,
+      reason: "I need a bit more information to find your best match. What's your job role? How long have you been at the company? Do you manage people?",
+    };
+  }
+  
+  // Generate reason based on the persona
+  const persona = personas.find(p => p.id === topPersonaId);
+  const reason = persona 
+    ? `Your profile matches ${persona.name}, ${persona.title}. ${persona.role} with similar characteristics.`
+    : 'Based on your description.';
+  
+  return {
+    personaId: topPersonaId,
+    confidence: Math.round(confidence * 100) / 100,
+    reason,
+  };
+}
 
 export async function POST(request: NextRequest) {
   try {
