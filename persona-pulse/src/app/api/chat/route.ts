@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { loadPersonaKnowledge } from '@/lib/persona-knowledge';
 
 const OLLAMA_API_URL = process.env.OLLAMA_URL || 'http://localhost:11434/api/generate';
 const MODEL = process.env.OLLAMA_MODEL || 'phi3:mini';
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, personaContext } = await request.json();
+    const { message, personaContext, personaId } = await request.json();
 
     if (!message || !personaContext) {
       return NextResponse.json(
@@ -14,13 +15,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Load extended knowledge for the persona if available
+    let knowledgeContext = '';
+    if (personaId) {
+      const knowledge = loadPersonaKnowledge(personaId);
+      if (knowledge) {
+        knowledgeContext = `\n\nEXTENDED KNOWLEDGE BASE:\n${knowledge}`;
+      }
+    }
+
+    // Build the full context with knowledge
+    const fullContext = `${personaContext}${knowledgeContext}`;
+
     // Call Ollama API
     const response = await fetch(OLLAMA_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: MODEL,
-        prompt: `${personaContext}\n\nUser: ${message}\n\n${personaContext.split('\n')[0].replace('You are ', '')}:`,
+        prompt: `${fullContext}\n\nUser: ${message}\n\n${personaContext.split('\n')[0].replace('You are ', '')}:`,
         stream: false,
         options: {
           temperature: 0.7,

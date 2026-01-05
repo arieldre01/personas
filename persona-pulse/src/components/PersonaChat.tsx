@@ -124,6 +124,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
           body: JSON.stringify({
             message: `${conversationHistory}\nUser: ${userMessage.content}`,
             personaContext,
+            personaId: persona.id,
           }),
         });
 
