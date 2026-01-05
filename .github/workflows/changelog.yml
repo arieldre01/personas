@@ -1,0 +1,65 @@
+name: Generate Changelog
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - master
+
+jobs:
+  changelog:
+    # Only run on merged PRs or direct pushes
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git log
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          
+      - name: Start Ollama and pull model
+        run: |
+          # Start Ollama in background
+          ollama serve &
+          sleep 5
+          
+          # Pull the model (phi3:mini is small and fast)
+          ollama pull phi3:mini
+          
+          # Wait for model to be ready
+          sleep 2
+
+      - name: Generate Changelog
+        run: |
+          python generate_changelog.py
+
+      - name: Commit and push changelog
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Check if CHANGELOG.md was modified
+          if git diff --quiet CHANGELOG.md; then
+            echo "No changes to CHANGELOG.md"
+          else
+            git add CHANGELOG.md
+            git commit -m "docs: update CHANGELOG.md [skip ci]"
+            git push
+          fi
+
