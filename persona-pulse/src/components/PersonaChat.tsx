@@ -222,23 +222,23 @@ export function PersonaChat({ persona }: PersonaChatProps) {
 
             {/* Message bubble */}
             <div
-              className={`max-w-[75%] rounded-lg px-4 py-2 ${
+              className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
                 message.role === 'user'
-                  ? 'bg-blue-500 text-white'
-                  : `${colors.bg} ${colors.text}`
+                  ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-md'
+                  : `${colors.bg} ${colors.text} rounded-bl-md border border-gray-100 dark:border-gray-700`
               }`}
             >
               {message.role === 'persona' && (
-                <p className="text-xs font-medium opacity-70 mb-1">{persona.name}</p>
+                <p className="text-xs font-semibold opacity-80 mb-1">{persona.name}</p>
               )}
-              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
             </div>
           </div>
         ))}
 
         {isTyping && (
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 h-8 w-8 rounded-full overflow-hidden">
+          <div className="flex gap-3 animate-scale-in">
+            <div className="flex-shrink-0 h-8 w-8 rounded-full overflow-hidden ring-2 ring-white dark:ring-gray-700 shadow-sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={getPersonaImage(persona)}
@@ -246,11 +246,11 @@ export function PersonaChat({ persona }: PersonaChatProps) {
                 className="h-full w-full object-cover"
               />
             </div>
-            <div className={`rounded-lg px-4 py-2 ${colors.bg}`}>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className={`rounded-2xl rounded-bl-md px-4 py-3 ${colors.bg} border border-gray-100 dark:border-gray-700`}>
+              <div className="flex items-center gap-1.5 h-5">
+                <div className="w-2 h-2 rounded-full bg-gray-400 typing-dot" />
+                <div className="w-2 h-2 rounded-full bg-gray-400 typing-dot" />
+                <div className="w-2 h-2 rounded-full bg-gray-400 typing-dot" />
               </div>
             </div>
           </div>
