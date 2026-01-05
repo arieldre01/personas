@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChatMessage, Message } from './ChatMessage';
 import { Persona, personas, getPersonaById } from '@/lib/personas';
-import { Loader2, Send, Wifi, WifiOff } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 
 interface FinderGuidedProps {
   onPersonaMatch: (persona: Persona) => void;
@@ -13,43 +13,42 @@ interface FinderGuidedProps {
 // Guided discovery questions
 const guidedQuestions = [
   {
-    question: "Let's start! How do you typically prefer to receive work updates?",
+    question: "What's your role?",
     options: [
-      'Quick bullet points',
-      'Detailed reports with data',
-      'Short videos or visuals',
-      'Face-to-face conversations',
-      'Mobile notifications',
+      'Manager / Team Lead',
+      'Individual Contributor',
+      'Sales / Customer Facing',
+      'Field / Frontline Worker',
+      'New Employee / Junior',
     ],
   },
   {
-    question: "What's your biggest frustration at work?",
+    question: "How long have you been at the company?",
     options: [
-      'Information overload',
-      'Vague messaging without metrics',
-      'Feeling disconnected from HQ',
-      'Too much corporate jargon',
-      'Boring top-down updates',
+      'Less than 1 year',
+      '1-3 years',
+      '4-10 years',
+      'More than 10 years',
+      'Recently joined (acquisition)',
     ],
   },
   {
-    question: 'What motivates you the most?',
+    question: 'What\'s your age group?',
     options: [
-      'Helping my team succeed',
-      'Career advancement & data-driven wins',
-      'Social connection & recognition',
-      'Being the go-to expert',
-      'Loyalty & genuine relationships',
+      '20s (Gen Z)',
+      '30s (Millennial)',
+      '40s (Gen X)',
+      '50+ (Boomer)',
     ],
   },
   {
-    question: 'How do you feel about change at work?',
+    question: 'Where do you mostly work?',
     options: [
-      "Cautious - I've seen too many initiatives fail",
-      'Skeptical until I see the data',
-      'Excited if it means growth opportunities',
-      'Frustrated if it breaks my workflow',
-      'Open if it improves team connection',
+      'At a desk / Office',
+      'On the go / Mobile',
+      'Remote / Work from home',
+      'In the field / On-site',
+      'Mix of everything',
     ],
   },
 ];
@@ -61,14 +60,6 @@ export function FinderGuided({ onPersonaMatch }: FinderGuidedProps) {
   const [matchedPersona, setMatchedPersona] = useState<Persona | null>(null);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
-  const [ollamaConnected, setOllamaConnected] = useState<boolean | null>(null);
-
-  // Check Ollama connection on mount
-  useEffect(() => {
-    fetch('http://localhost:11434/api/tags')
-      .then(res => setOllamaConnected(res.ok))
-      .catch(() => setOllamaConnected(false));
-  }, []);
 
   const startGuidedFlow = async () => {
     setIsLoading(true);
@@ -139,7 +130,7 @@ export function FinderGuided({ onPersonaMatch }: FinderGuidedProps) {
             const assistantMessage: Message = {
               id: (Date.now() + 1).toString(),
               role: 'assistant',
-              content: `Based on your responses, you strongly align with **${persona.name}** - "${persona.title}"!\n\n"${persona.quote}"\n\n${data.reason}\n\nConfidence: ${confidencePercent}%`,
+              content: `Based on your responses, you align with ${persona.name} - "${persona.title}"!\n\n"${persona.quote}"\n\n${data.reason}\n\nMatch confidence: ${confidencePercent}%`,
             };
             setMessages((prev) => [...prev, assistantMessage]);
             setMatchedPersona(persona);
@@ -161,24 +152,7 @@ export function FinderGuided({ onPersonaMatch }: FinderGuidedProps) {
 
   if (messages.length === 0 && !isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        {/* AI Status */}
-        <div className="flex items-center gap-2 mb-4 text-xs">
-          {ollamaConnected === null ? (
-            <span className="text-gray-400">Checking AI...</span>
-          ) : ollamaConnected ? (
-            <>
-              <Wifi className="h-3 w-3 text-green-500" />
-              <span className="text-green-600">AI-Powered Matching (Ollama)</span>
-            </>
-          ) : (
-            <>
-              <WifiOff className="h-3 w-3 text-amber-500" />
-              <span className="text-amber-600">Fallback Mode</span>
-            </>
-          )}
-        </div>
-
+      <div className="flex flex-col h-full min-h-0 overflow-hidden items-center justify-center py-12 text-center px-4">
         <div className="mb-4 rounded-full bg-purple-100 dark:bg-purple-900/30 p-4">
           <Send className="h-8 w-8 text-purple-600 dark:text-purple-400" />
         </div>
@@ -195,9 +169,9 @@ export function FinderGuided({ onPersonaMatch }: FinderGuidedProps) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden">
       {/* Messages */}
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+      <div className="flex-1 min-h-0 space-y-4 overflow-y-auto p-4">
         {messages.map((message) => (
           <ChatMessage key={message.id} message={message} />
         ))}
@@ -211,24 +185,25 @@ export function FinderGuided({ onPersonaMatch }: FinderGuidedProps) {
       </div>
 
       {/* Options or Result */}
-      <div className="border-t p-4">
+      <div className="flex-shrink-0 border-t p-4 bg-gray-50/50 dark:bg-gray-900/50">
         {matchedPersona ? (
           <div className="text-center">
             <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-              We found your match!
+              🎉 We found your match!
             </p>
-            <Button onClick={() => onPersonaMatch(matchedPersona)} size="lg">
+            <Button onClick={() => onPersonaMatch(matchedPersona)} size="lg" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">
               View {matchedPersona.name}&apos;s Profile
             </Button>
           </div>
         ) : currentOptions.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-center">
             {currentOptions.map((option, i) => (
               <Button
                 key={i}
                 variant="outline"
                 onClick={() => handleOptionSelect(option)}
                 disabled={isLoading}
+                className="text-sm"
               >
                 {option}
               </Button>

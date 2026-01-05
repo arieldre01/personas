@@ -11,12 +11,12 @@ interface FinderFreeformProps {
   onPersonaMatch: (persona: Persona) => void;
 }
 
-// Example prompts to help users
-const examplePrompts = [
+// Conversation prompts to help users who get stuck
+const conversationStarters = [
   "What's your job role?",
-  "How many years at the company?",
+  "How long have you been at the company?",
+  "Are you mostly at a desk or on the go?",
   "Do you manage people?",
-  "Desk job or field work?",
 ];
 
 export function FinderFreeform({ onPersonaMatch }: FinderFreeformProps) {
@@ -31,6 +31,11 @@ export function FinderFreeform({ onPersonaMatch }: FinderFreeformProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Focus textarea on mount
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
 
   const handleSubmit = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -56,36 +61,24 @@ export function FinderFreeform({ onPersonaMatch }: FinderFreeformProps) {
       });
 
       const data = await response.json();
+      const persona = getPersonaById(data.personaId);
       
-      // Check if we need more info
-      if (data.needMoreInfo || !data.personaId) {
+      if (persona) {
+        const confidencePercent = Math.round(data.confidence * 100);
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: data.reason || "I need more information to find your match. Please tell me about your job role, experience, and work style.",
+          content: `Based on your description, you align with ${persona.name} - "${persona.title}"!\n\n"${persona.quote}"\n\n${data.reason}\n\nMatch confidence: ${confidencePercent}%`,
         };
         setMessages((prev) => [...prev, assistantMessage]);
-        // Don't set matchedPersona - keep asking for info
-      } else {
-        // We have a match!
-        const persona = getPersonaById(data.personaId);
-        if (persona) {
-          const confidencePercent = Math.round(data.confidence * 100);
-          const assistantMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            content: `Based on your description, you match with ${persona.name} - "${persona.title}"!\n\n"${persona.quote}"\n\n${data.reason}\n\nMatch confidence: ${confidencePercent}%`,
-          };
-          setMessages((prev) => [...prev, assistantMessage]);
-          setMatchedPersona(persona);
-        }
+        setMatchedPersona(persona);
       }
     } catch (error) {
       console.error('Persona match error:', error);
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "Something went wrong. Please try again and tell me about your job role and experience.",
+        content: "I had trouble analyzing your response. Could you tell me more about your work style and communication preferences?",
       };
       setMessages((prev) => [...prev, assistantMessage]);
     }
@@ -100,8 +93,8 @@ export function FinderFreeform({ onPersonaMatch }: FinderFreeformProps) {
     }
   };
 
-  const handlePromptClick = (prompt: string) => {
-    setInput(prompt);
+  const handleStarterClick = (starter: string) => {
+    setInput(starter);
     textareaRef.current?.focus();
   };
 
@@ -128,13 +121,13 @@ export function FinderFreeform({ onPersonaMatch }: FinderFreeformProps) {
           <div className="mb-4 w-full max-w-md">
             <p className="text-xs text-gray-500 mb-2">Need inspiration? Try one of these:</p>
             <div className="flex flex-wrap gap-2 justify-center">
-              {examplePrompts.map((prompt, i) => (
+              {conversationStarters.map((starter, i) => (
                 <button
                   key={i}
-                  onClick={() => handlePromptClick(prompt)}
+                  onClick={() => handleStarterClick(starter)}
                   className="text-xs px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-gray-700 dark:text-gray-300 transition-colors"
                 >
-                  {prompt}
+                  {starter}
                 </button>
               ))}
             </div>
@@ -187,7 +180,7 @@ export function FinderFreeform({ onPersonaMatch }: FinderFreeformProps) {
         {isLoading && (
           <div className="flex items-center gap-2 text-gray-500">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Analyzing your response...</span>
+            <span>Analyzing your work style...</span>
           </div>
         )}
         <div ref={messagesEndRef} />
