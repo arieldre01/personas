@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -29,7 +29,11 @@ import {
   Plus,
   X,
   Save,
-  Sparkles
+  Sparkles,
+  Upload,
+  FileText,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 
 interface PersonaBuilderProps {
@@ -39,11 +43,12 @@ interface PersonaBuilderProps {
   editPersona?: CustomPersona | null;
 }
 
-type Step = 'basic' | 'psychology' | 'communication' | 'preview';
+type Step = 'import' | 'basic' | 'psychology' | 'communication' | 'preview';
 
-const STEPS: Step[] = ['basic', 'psychology', 'communication', 'preview'];
+const STEPS: Step[] = ['import', 'basic', 'psychology', 'communication', 'preview'];
 
 const STEP_TITLES: Record<Step, string> = {
+  import: 'Import',
   basic: 'Basic Info',
   psychology: 'Psychology Profile',
   communication: 'Communication Protocol',
@@ -51,11 +56,25 @@ const STEP_TITLES: Record<Step, string> = {
 };
 
 const STEP_ICONS: Record<Step, React.ReactNode> = {
+  import: <Upload className="h-4 w-4" />,
   basic: <User className="h-4 w-4" />,
   psychology: <Brain className="h-4 w-4" />,
   communication: <MessageSquare className="h-4 w-4" />,
   preview: <Eye className="h-4 w-4" />,
 };
+
+const SUPPORTED_FILE_TYPES = [
+  '.pptx',
+  '.docx', 
+  '.pdf',
+  '.txt',
+];
+
+interface MissingField {
+  field: string;
+  question: string;
+  answer: string;
+}
 
 const GENERATIONS: Generation[] = ['Gen Z', 'Gen Y', 'Gen X', 'Boomer'];
 
@@ -65,7 +84,7 @@ const AVATAR_PRESETS = [
 ];
 
 export function PersonaBuilder({ open, onClose, onSave, editPersona }: PersonaBuilderProps) {
-  const [currentStep, setCurrentStep] = useState<Step>('basic');
+  const [currentStep, setCurrentStep] = useState<Step>('import');
   const [formData, setFormData] = useState(() => 
     editPersona ? { ...editPersona } : createBlankPersona()
   );
@@ -73,10 +92,141 @@ export function PersonaBuilder({ open, onClose, onSave, editPersona }: PersonaBu
   const [newPainPoint, setNewPainPoint] = useState('');
   const [newDo, setNewDo] = useState('');
   const [newDont, setNewDont] = useState('');
+  
+  // File upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
+  const [missingFields, setMissingFields] = useState<MissingField[]>([]);
+  const [isAskingQuestions, setIsAskingQuestions] = useState(false);
 
   const currentStepIndex = STEPS.indexOf(currentStep);
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === STEPS.length - 1;
+
+  // Handle file selection
+  const handleFileSelect = async (file: File) => {
+    setUploadedFile(file);
+    setExtractionError(null);
+    setIsExtracting(true);
+    setMissingFields([]);
+
+    try {
+      // Create form data for upload
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+
+      // Extract text and parse persona
+      const response = await fetch('/api/extract-persona', {
+        method: 'POST',
+        body: formDataUpload,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to extract persona');
+      }
+
+      const result = await response.json();
+      
+      // Update form with extracted data
+      if (result.persona) {
+        setFormData(prev => ({
+          ...prev,
+          ...result.persona,
+          psychology: {
+            ...prev.psychology,
+            ...result.persona.psychology,
+          },
+          communication: {
+            ...prev.communication,
+            ...result.persona.communication,
+          },
+        }));
+      }
+
+      // Set missing fields for follow-up questions
+      if (result.missingFields && result.missingFields.length > 0) {
+        setMissingFields(result.missingFields.map((f: { field: string; question: string }) => ({
+          ...f,
+          answer: '',
+        })));
+        setIsAskingQuestions(true);
+      } else {
+        // All fields extracted, go to basic info
+        setCurrentStep('basic');
+      }
+    } catch (error) {
+      setExtractionError(error instanceof Error ? error.message : 'Failed to extract persona');
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  // Handle drag and drop
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  // Handle answering missing field questions
+  const handleAnswerQuestion = (index: number, answer: string) => {
+    setMissingFields(prev => prev.map((f, i) => 
+      i === index ? { ...f, answer } : f
+    ));
+  };
+
+  // Submit answers and continue
+  const handleSubmitAnswers = async () => {
+    setIsExtracting(true);
+    try {
+      const response = await fetch('/api/complete-persona', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPersona: formData,
+          answers: missingFields,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to complete persona');
+      }
+
+      const result = await response.json();
+      
+      if (result.persona) {
+        setFormData(prev => ({
+          ...prev,
+          ...result.persona,
+          psychology: {
+            ...prev.psychology,
+            ...result.persona.psychology,
+          },
+          communication: {
+            ...prev.communication,
+            ...result.persona.communication,
+          },
+        }));
+      }
+
+      setIsAskingQuestions(false);
+      setMissingFields([]);
+      setCurrentStep('basic');
+    } catch (error) {
+      setExtractionError(error instanceof Error ? error.message : 'Failed to complete persona');
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   const handleNext = () => {
     if (!isLastStep) {
@@ -111,9 +261,18 @@ export function PersonaBuilder({ open, onClose, onSave, editPersona }: PersonaBu
 
   const handleClose = () => {
     setFormData(createBlankPersona());
-    setCurrentStep('basic');
+    setCurrentStep('import');
     setSelectedAvatar('👩‍💼');
+    setUploadedFile(null);
+    setExtractionError(null);
+    setMissingFields([]);
+    setIsAskingQuestions(false);
     onClose();
+  };
+
+  // Skip import and start from scratch
+  const handleSkipImport = () => {
+    setCurrentStep('basic');
   };
 
   const addPainPoint = () => {
@@ -227,6 +386,130 @@ export function PersonaBuilder({ open, onClose, onSave, editPersona }: PersonaBu
 
         {/* Form Content */}
         <div className="flex-1 overflow-y-auto px-1">
+          {/* Step 0: Import */}
+          {currentStep === 'import' && (
+            <div className="space-y-6">
+              {/* File Upload Area */}
+              {!isAskingQuestions && (
+                <>
+                  <div
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+                      uploadedFile
+                        ? 'border-green-400 bg-green-50 dark:bg-green-900/20'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                    }`}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept={SUPPORTED_FILE_TYPES.join(',')}
+                      onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                      className="hidden"
+                    />
+                    
+                    {isExtracting ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="h-12 w-12 text-purple-500 animate-spin" />
+                        <p className="text-gray-600 dark:text-gray-400">
+                          Extracting persona information...
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          AI is analyzing your file
+                        </p>
+                      </div>
+                    ) : uploadedFile ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <FileText className="h-12 w-12 text-green-500" />
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {uploadedFile.name}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Click to choose a different file
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3">
+                        <Upload className="h-12 w-12 text-gray-400" />
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          Drop a file here or click to browse
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Supports: PowerPoint, Word, PDF, Text files
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {extractionError && (
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
+                      <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                      <p className="text-sm">{extractionError}</p>
+                    </div>
+                  )}
+
+                  <div className="text-center">
+                    <p className="text-gray-500 dark:text-gray-400 mb-3">or</p>
+                    <Button variant="outline" onClick={handleSkipImport}>
+                      Start from scratch
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Follow-up Questions */}
+              {isAskingQuestions && missingFields.length > 0 && (
+                <div className="space-y-4">
+                  <div className="text-center mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Just a few more details...
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Help us complete the persona with these quick questions
+                    </p>
+                  </div>
+
+                  {missingFields.map((field, index) => (
+                    <div key={field.field} className="space-y-2">
+                      <Label>{field.question}</Label>
+                      <Textarea
+                        value={field.answer}
+                        onChange={(e) => handleAnswerQuestion(index, e.target.value)}
+                        placeholder="Type your answer..."
+                        rows={2}
+                      />
+                    </div>
+                  ))}
+
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsAskingQuestions(false);
+                        setCurrentStep('basic');
+                      }}
+                      className="flex-1"
+                    >
+                      Skip & Edit Manually
+                    </Button>
+                    <Button
+                      onClick={handleSubmitAnswers}
+                      disabled={isExtracting}
+                      className="flex-1 bg-gradient-to-r from-purple-500 to-teal-500"
+                    >
+                      {isExtracting ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : null}
+                      Complete Persona
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Step 1: Basic Info */}
           {currentStep === 'basic' && (
             <div className="space-y-4">
@@ -515,38 +798,40 @@ export function PersonaBuilder({ open, onClose, onSave, editPersona }: PersonaBu
           )}
         </div>
 
-        {/* Footer Navigation */}
-        <div className="flex items-center justify-between pt-4 border-t mt-4">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={isFirstStep}
-            className="gap-1"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back
-          </Button>
-
-          <div className="text-sm text-gray-500">
-            Step {currentStepIndex + 1} of {STEPS.length}
-          </div>
-
-          {isLastStep ? (
+        {/* Footer Navigation - Hidden on import step */}
+        {currentStep !== 'import' && (
+          <div className="flex items-center justify-between pt-4 border-t mt-4">
             <Button
-              onClick={handleSave}
-              disabled={!isBasicValid}
-              className="gap-1 bg-gradient-to-r from-purple-500 to-teal-500"
+              variant="outline"
+              onClick={handleBack}
+              disabled={currentStep === 'basic'}
+              className="gap-1"
             >
-              <Save className="h-4 w-4" />
-              {editPersona ? 'Save Changes' : 'Create Persona'}
+              <ChevronLeft className="h-4 w-4" />
+              Back
             </Button>
-          ) : (
-            <Button onClick={handleNext} className="gap-1">
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+
+            <div className="text-sm text-gray-500">
+              Step {currentStepIndex} of {STEPS.length - 1}
+            </div>
+
+            {isLastStep ? (
+              <Button
+                onClick={handleSave}
+                disabled={!isBasicValid}
+                className="gap-1 bg-gradient-to-r from-purple-500 to-teal-500"
+              >
+                <Save className="h-4 w-4" />
+                {editPersona ? 'Save Changes' : 'Create Persona'}
+              </Button>
+            ) : (
+              <Button onClick={handleNext} className="gap-1">
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
