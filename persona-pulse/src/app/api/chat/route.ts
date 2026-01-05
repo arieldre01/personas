@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const OLLAMA_API_URL = process.env.OLLAMA_URL || 'http://localhost:11434/api/generate';
-const MODEL = process.env.OLLAMA_MODEL || 'gemma3:1b';
+const MODEL = process.env.OLLAMA_MODEL || 'phi3:mini';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,10 +23,10 @@ export async function POST(request: NextRequest) {
         prompt: `${personaContext}\n\nUser: ${message}\n\n${personaContext.split('\n')[0].replace('You are ', '')}:`,
         stream: false,
         options: {
-          temperature: 0.8,
+          temperature: 0.7,
           top_p: 0.9,
-          num_predict: 100, // Shorter = faster
-          num_ctx: 2048, // Smaller context window = faster
+          num_predict: 150, // Allow slightly longer responses
+          num_ctx: 4096, // Better context understanding
         },
       }),
     });
