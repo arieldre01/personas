@@ -1,18 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PersonaGrid } from '@/components/PersonaGrid';
 import { PersonaDetail } from '@/components/PersonaDetail';
 import { PersonaFinder } from '@/components/PersonaFinder';
 import { personas, Persona, generationColors } from '@/lib/personas';
-import { Compass, Users, Sparkles, Github } from 'lucide-react';
+import { Compass, Users, Sparkles, Github, Moon, Sun } from 'lucide-react';
 
 export default function Home() {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [finderOpen, setFinderOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    // Check initial preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const savedTheme = localStorage.getItem('theme');
+    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+    setIsDark(shouldBeDark);
+    if (shouldBeDark) {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
+    if (newIsDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   const handleSelectPersona = (persona: Persona) => {
     setSelectedPersona(persona);
@@ -39,19 +63,26 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               onClick={() => setFinderOpen(true)}
-              className="gap-2 bg-gradient-to-r from-purple-500 to-teal-500 hover:from-purple-600 hover:to-teal-600"
+              className="gap-2 bg-gradient-to-r from-purple-500 to-teal-500 hover:from-purple-600 hover:to-teal-600 shadow-lg shadow-purple-500/25"
             >
               <Compass className="h-4 w-4" />
               Find Your Persona
             </Button>
+            <button
+              onClick={toggleDarkMode}
+              className="rounded-full p-2.5 text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+              aria-label="Toggle dark mode"
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
             <a
               href="https://github.com/arieldre01/personas"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
+              className="rounded-full p-2.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
             >
               <Github className="h-5 w-5" />
             </a>
@@ -69,7 +100,7 @@ export default function Home() {
           
           <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
             Understand Your{' '}
-            <span className="bg-gradient-to-r from-purple-600 via-teal-500 to-amber-500 bg-clip-text text-transparent">
+            <span className="animated-gradient-text">
               Team&apos;s Pulse
             </span>
           </h1>

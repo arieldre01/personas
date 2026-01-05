@@ -13,28 +13,42 @@ interface PersonaCardProps {
 export function PersonaCard({ persona, onClick }: PersonaCardProps) {
   const colors = generationColors[persona.generation];
 
+  // Map generation to glow colors
+  const glowColors: Record<string, string> = {
+    'Gen Z': '#8b5cf6',
+    'Gen Y': '#14b8a6',
+    'Gen X': '#f59e0b',
+    'Boomer': '#1e3a8a',
+  };
+
   return (
     <Card
-      className={`group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${colors.border} border-2 overflow-hidden h-full flex flex-col`}
+      className={`group cursor-pointer card-hover ${colors.border} border-2 overflow-hidden h-full flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm`}
       onClick={() => onClick(persona)}
     >
-      <div className={`${colors.bg} p-4`}>
+      <div className={`${colors.bg} p-4 relative overflow-hidden`}>
+        {/* Subtle pattern overlay */}
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.8),transparent_70%)]" />
+        
         {/* Profile Image */}
-        <div className="relative mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full ring-2 ring-white dark:ring-gray-800 shadow-md">
+        <div 
+          className="avatar-glow relative mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full ring-2 ring-white dark:ring-gray-800 shadow-lg"
+          style={{ '--glow-color': glowColors[persona.generation] } as React.CSSProperties}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={getPersonaImage(persona)}
             alt={persona.name}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         </div>
 
         {/* Name and Title */}
-        <div className="text-center">
-          <h3 className="text-base font-bold text-gray-900 dark:text-white">
+        <div className="text-center relative">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white tracking-tight">
             {persona.name}
           </h3>
-          <p className={`text-xs font-medium ${colors.text} line-clamp-1`}>
+          <p className={`text-xs font-medium ${colors.text} line-clamp-1 mt-0.5`}>
             {persona.title}
           </p>
         </div>
