@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Persona, generationColors } from '@/lib/personas';
 import { getFullPersonaContext } from '@/lib/persona-prompts';
-import { Send, Loader2, Wifi, WifiOff } from 'lucide-react';
+import { Send, Loader2, Wifi, WifiOff, Trash2 } from 'lucide-react';
 import { getPersonaImage, getPersonaImagePosition } from '@/lib/personas';
+import { saveChat, loadChat, clearChat } from '@/lib/chat-storage';
 
 interface Message {
   id: string;
@@ -19,13 +20,13 @@ interface PersonaChatProps {
 }
 
 export function PersonaChat({ persona }: PersonaChatProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '0',
-      role: 'persona',
-      content: `Hi, I'm ${persona.name}. "${persona.quote}" Feel free to ask me anything about my work style, preferences, or how to communicate with people like me.`,
-    },
-  ]);
+  const getInitialMessage = (): Message => ({
+    id: '0',
+    role: 'persona',
+    content: `Hi, I'm ${persona.name}. "${persona.quote}" Feel free to ask me anything about my work style, preferences, or how to communicate with people like me.`,
+  });
+
+  const [messages, setMessages] = useState<Message[]>([getInitialMessage()]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [useOllama, setUseOllama] = useState(true);
@@ -42,10 +43,36 @@ export function PersonaChat({ persona }: PersonaChatProps) {
     scrollToBottom();
   }, [messages]);
 
+  // Load saved messages on mount
+  useEffect(() => {
+    const savedMessages = loadChat(persona.id);
+    if (savedMessages.length > 0) {
+      setMessages(savedMessages);
+    }
+  }, [persona.id]);
+
+  // Save messages whenever they change (but skip the initial load)
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    // Only save if we have more than the initial greeting
+    if (messages.length > 1) {
+      saveChat(persona.id, messages);
+    }
+  }, [messages, persona.id]);
+
   // Check Ollama status on mount
   useEffect(() => {
     checkOllamaStatus();
   }, []);
+
+  const handleClearChat = () => {
+    clearChat(persona.id);
+    setMessages([getInitialMessage()]);
+  };
 
   const checkOllamaStatus = async () => {
     try {
@@ -109,7 +136,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
     setInput('');
     setIsTyping(true);
 
-    let responseText = '';
+    const personaMessageId = (Date.now() + 1).toString();
 
     if (useOllama && ollamaStatus === 'connected') {
       try {
@@ -125,34 +152,81 @@ export function PersonaChat({ persona }: PersonaChatProps) {
             message: `${conversationHistory}\nUser: ${userMessage.content}`,
             personaContext,
             personaId: persona.id,
+            stream: true,
           }),
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          responseText = data.response || generateMockResponse(userMessage.content);
+        if (response.ok && response.body) {
+          // Add empty persona message that we'll stream into
+          setMessages((prev) => [...prev, {
+            id: personaMessageId,
+            role: 'persona',
+            content: '',
+          }]);
+          setIsTyping(false);
+
+          // Read the SSE stream
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let streamedContent = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
+
+            for (const line of lines) {
+              try {
+                const jsonStr = line.replace('data: ', '');
+                const data = JSON.parse(jsonStr);
+                
+                if (data.token) {
+                  streamedContent += data.token;
+                  // Update the message content in real-time
+                  setMessages((prev) => prev.map((msg) =>
+                    msg.id === personaMessageId
+                      ? { ...msg, content: streamedContent }
+                      : msg
+                  ));
+                }
+              } catch {
+                // Skip malformed JSON
+              }
+            }
+          }
         } else {
           // Fallback to mock if API fails
-          responseText = generateMockResponse(userMessage.content);
+          const responseText = generateMockResponse(userMessage.content);
+          setMessages((prev) => [...prev, {
+            id: personaMessageId,
+            role: 'persona',
+            content: responseText,
+          }]);
+          setIsTyping(false);
         }
       } catch (error) {
         console.error('Ollama error:', error);
-        responseText = generateMockResponse(userMessage.content);
+        const responseText = generateMockResponse(userMessage.content);
+        setMessages((prev) => [...prev, {
+          id: personaMessageId,
+          role: 'persona',
+          content: responseText,
+        }]);
+        setIsTyping(false);
       }
     } else {
       // Use mock responses
       await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 800));
-      responseText = generateMockResponse(userMessage.content);
+      const responseText = generateMockResponse(userMessage.content);
+      setMessages((prev) => [...prev, {
+        id: personaMessageId,
+        role: 'persona',
+        content: responseText,
+      }]);
+      setIsTyping(false);
     }
-
-    const personaMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      role: 'persona',
-      content: responseText,
-    };
-
-    setMessages((prev) => [...prev, personaMessage]);
-    setIsTyping(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -184,14 +258,26 @@ export function PersonaChat({ persona }: PersonaChatProps) {
             </>
           )}
         </div>
-        {ollamaStatus === 'offline' && (
-          <button
-            onClick={checkOllamaStatus}
-            className="text-blue-500 hover:underline"
-          >
-            Retry
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {ollamaStatus === 'offline' && (
+            <button
+              onClick={checkOllamaStatus}
+              className="text-blue-500 hover:underline"
+            >
+              Retry
+            </button>
+          )}
+          {messages.length > 1 && (
+            <button
+              onClick={handleClearChat}
+              className="flex items-center gap-1 text-gray-500 hover:text-red-500 transition-colors"
+              title="Clear chat history"
+            >
+              <Trash2 className="h-3 w-3" />
+              <span>Clear</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
