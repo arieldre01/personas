@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Persona, generationColors, getPersonaImage } from '@/lib/personas';
+import { Persona, generationColors, getPersonaImage, getPersonaImagePosition } from '@/lib/personas';
 import { PersonaChat } from './PersonaChat';
 import {
   MapPin,
@@ -54,6 +54,7 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
                   src={getPersonaImage(persona)}
                   alt={persona.name}
                   className="h-full w-full object-cover"
+                  style={{ objectPosition: getPersonaImagePosition(persona) }}
                 />
               </div>
 
