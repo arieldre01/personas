@@ -75,8 +75,8 @@ export default function Home() {
           </h1>
           
           <p className="mb-8 text-lg text-gray-600 dark:text-gray-400">
-            Explore detailed psychological and demographic profiles of different employee personas.
-            Learn how to communicate effectively with each type and discover which one matches your style.
+            Explore employee personas, understand their psychology, and <strong>have real conversations</strong> with them.
+            Practice your communication skills, discover your own style, and learn how to connect with every type.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4">
@@ -122,7 +122,7 @@ export default function Home() {
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-bold">Meet the Personas</h2>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Click on any persona to explore their full profile
+            Click on any persona to explore their profile and start a conversation
           </p>
         </div>
 
