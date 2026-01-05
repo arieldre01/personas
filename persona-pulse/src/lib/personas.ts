@@ -305,9 +305,25 @@ export function getPersonaById(id: string): Persona | undefined {
   return personas.find((p) => p.id === id);
 }
 
+// Map persona IDs to their local image files
+const personaImageMap: Record<string, string> = {
+  maya: '/images/personas/Maya_0.png',
+  ben: '/images/personas/Ben_0.png',
+  oliver: '/images/personas/Oliver_0.png',
+  priya: '', // No image extracted - will use fallback
+  anna: '/images/personas/Anna_0.png',
+  sahil: '/images/personas/Sahil_0.png',
+  ido: '/images/personas/Ido_0.png',
+  alex: '/images/personas/Alex_0.png',
+};
+
 // Helper function to get image URL for a persona
 export function getPersonaImage(persona: Persona): string {
-  // Try local image first, fall back to UI Avatars
+  // Use local image if available, otherwise fall back to UI Avatars
+  const localImage = personaImageMap[persona.id];
+  if (localImage) {
+    return localImage;
+  }
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(persona.name)}&size=200&background=random&color=fff&bold=true`;
 }
 
