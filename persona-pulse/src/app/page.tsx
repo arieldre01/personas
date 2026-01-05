@@ -6,15 +6,28 @@ import { Badge } from '@/components/ui/badge';
 import { PersonaGrid } from '@/components/PersonaGrid';
 import { PersonaDetail } from '@/components/PersonaDetail';
 import { PersonaFinder } from '@/components/PersonaFinder';
+import { PersonaBuilder } from '@/components/PersonaBuilder';
 import { personas, Persona, generationColors } from '@/lib/personas';
-import { Compass, Users, Sparkles, Github, Moon, Sun } from 'lucide-react';
+import { getCustomPersonas, CustomPersona, deleteCustomPersona } from '@/lib/custom-personas';
+import { Compass, Users, Sparkles, Github, Moon, Sun, Plus } from 'lucide-react';
 
 export default function Home() {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [finderOpen, setFinderOpen] = useState(false);
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [editingPersona, setEditingPersona] = useState<CustomPersona | null>(null);
+  const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [isDark, setIsDark] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+
+  // Load custom personas on mount
+  useEffect(() => {
+    setCustomPersonas(getCustomPersonas());
+  }, []);
+
+  // Merge default and custom personas
+  const allPersonas = [...personas, ...customPersonas] as Persona[];
 
   // Calculate grid columns based on screen size (matching the grid layout)
   const getColumnsCount = () => {
@@ -27,10 +40,10 @@ export default function Home() {
 
   // Keyboard navigation handler
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (detailOpen || finderOpen) return; // Don't navigate when modals are open
+    if (detailOpen || finderOpen || builderOpen) return; // Don't navigate when modals are open
     
     const cols = getColumnsCount();
-    const total = personas.length;
+    const total = allPersonas.length;
     
     switch (e.key) {
       case 'ArrowRight':
@@ -58,11 +71,11 @@ export default function Home() {
       case 'Enter':
         e.preventDefault();
         if (focusedIndex >= 0 && focusedIndex < total) {
-          handleSelectPersona(personas[focusedIndex]);
+          handleSelectPersona(allPersonas[focusedIndex]);
         }
         break;
     }
-  }, [detailOpen, finderOpen, focusedIndex]);
+  }, [detailOpen, finderOpen, builderOpen, focusedIndex, allPersonas]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -102,6 +115,27 @@ export default function Home() {
     setDetailOpen(true);
   };
 
+  const handleCreatePersona = () => {
+    setEditingPersona(null);
+    setBuilderOpen(true);
+  };
+
+  const handleEditPersona = (persona: CustomPersona) => {
+    setEditingPersona(persona);
+    setBuilderOpen(true);
+  };
+
+  const handleDeletePersona = (id: string) => {
+    if (confirm('Are you sure you want to delete this persona?')) {
+      deleteCustomPersona(id);
+      setCustomPersonas(getCustomPersonas());
+    }
+  };
+
+  const handlePersonaSaved = () => {
+    setCustomPersonas(getCustomPersonas());
+  };
+
   return (
     <div className="min-h-screen hero-pattern">
       {/* Header */}
@@ -118,6 +152,14 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              onClick={handleCreatePersona}
+              variant="outline"
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Create Persona
+            </Button>
             <Button
               onClick={() => setFinderOpen(true)}
               className="gap-2 bg-gradient-to-r from-purple-500 to-teal-500 hover:from-purple-600 hover:to-teal-600 shadow-lg shadow-purple-500/25"
@@ -215,10 +257,12 @@ export default function Home() {
         </div>
 
         <PersonaGrid 
-          personas={personas} 
+          personas={allPersonas} 
           onSelectPersona={handleSelectPersona}
           focusedIndex={focusedIndex}
           onFocusChange={setFocusedIndex}
+          onEditPersona={handleEditPersona}
+          onDeletePersona={handleDeletePersona}
         />
       </section>
 
@@ -248,6 +292,16 @@ export default function Home() {
         open={finderOpen}
         onClose={() => setFinderOpen(false)}
         onPersonaMatch={handlePersonaMatch}
+      />
+
+      <PersonaBuilder
+        open={builderOpen}
+        onClose={() => {
+          setBuilderOpen(false);
+          setEditingPersona(null);
+        }}
+        onSave={handlePersonaSaved}
+        editPersona={editingPersona}
       />
     </div>
   );
