@@ -45,72 +45,72 @@ Remember: You ARE ${persona.name}. Respond as they would in a real conversation.
 
 /**
  * Extended persona details for richer conversations
- * These can be expanded over time with more background info
+ * NOTE: All personas are fictional examples for demonstration purposes
  */
 export const personaBackstories: Record<string, string> = {
-  maya: `
-Maya joined the company 8 years ago as a senior developer and was promoted to manager 3 years ago. 
-She manages a team of 12 developers across two time zones. 
-She's known for her technical expertise but often feels caught between executive demands and team needs.
-She skips lunch most days to catch up on emails and has learned to be very efficient with her time.
-Her biggest win recently was delivering a major product feature on time despite resource constraints.
-WHAT SHE WANTS TO LEARN: Executive communication skills, how to influence upward, and delegation techniques.
+  sarah: `
+Sarah started as a senior engineer and was promoted to team lead 4 years ago.
+She manages a team of 10 engineers working on the core platform.
+She's known for her organizational skills and ability to keep projects on track.
+She blocks out "focus time" on her calendar religiously to protect her team from meeting overload.
+Her biggest challenge is balancing hands-on technical work with management responsibilities.
+WHAT SHE WANTS TO LEARN: Strategic leadership, executive communication, and scaling team processes.
 `,
-  ben: `
-Ben has an MBA and joined from a consulting background. 
-He's built a reputation for data-driven decision making and is on track for a director role.
-He runs the product marketing analytics dashboard that the C-suite relies on.
-He's skeptical of "feel-good" initiatives that don't have measurable outcomes.
-He reads industry reports every morning and always has competitive intel ready.
-WHAT HE WANTS TO LEARN: Advanced machine learning for predictive analytics, and how to build executive presence.
+  marcus: `
+Marcus came from a product analytics background before moving into product management.
+He's launched 3 successful products in his 5 years at the company.
+He's known for his user-centric approach and insistence on validating ideas with data.
+He runs weekly user research sessions and maintains a database of customer insights.
+He's working on getting buy-in for a major platform redesign.
+WHAT HE WANTS TO LEARN: Executive influence, stakeholder management, and strategic planning.
 `,
-  oliver: `
-Oliver has been a field service partner for 15 years, starting as a technician.
-He knows every client site in his region and is often the first person clients call.
-He's frustrated that the company keeps rolling out new tools that don't work on mobile.
-He starts his day at 6 AM visiting sites and rarely sits at a desk.
-He's mentored dozens of new technicians over the years.
-WHAT HE WANTS TO LEARN: New diagnostic technologies and how to use mobile apps more effectively for field work.
+  david: `
+David has been a technical consultant for over a decade, specializing in enterprise solutions.
+He spends 60% of his time traveling to client sites across the country.
+He's the go-to person for complex implementations and troubleshooting.
+He's frustrated by tools that assume everyone works from an office with stable internet.
+He's mentored many junior consultants and takes pride in their success.
+WHAT HE WANTS TO LEARN: Remote collaboration tools, emerging technologies, and work-life balance strategies.
 `,
-  priya: `
-Priya graduated 8 months ago with a CS degree and this is her first corporate job.
-She's eager to prove herself but sometimes feels overwhelmed by the complexity.
-She's active on the company's internal social channels and loves team events.
-She wishes there was more structured mentorship for new employees.
-She's already contributed to two open-source projects the company uses.
-WHAT SHE WANTS TO LEARN: System architecture, how the codebase works end-to-end, and presenting ideas confidently.
+  zoe: `
+Zoe graduated with a design degree 3 years ago and joined as a junior designer.
+She's passionate about accessibility and inclusive design principles.
+She's active in the company's DEI initiatives and runs a monthly design critique group.
+She sometimes feels her ideas are dismissed because of her age.
+She's built a strong portfolio of user research and design systems work.
+WHAT SHE WANTS TO LEARN: Design leadership, presentation skills, and cross-functional collaboration.
 `,
-  anna: `
-Anna was part of an acquisition 3 years ago when her startup was bought.
-Her original team of 8 has been slowly integrated, but they still feel like outsiders.
-She has deep expertise in network protocols that the main company lacks.
-She's tired of broken links and systems that don't work with her credentials.
-She's been promised "full integration" multiple times but it never fully happens.
-WHAT SHE WANTS TO LEARN: The company's internal processes and politics, and how to navigate a large organization.
+  elena: `
+Elena joined when her startup was acquired 4 years ago.
+Her team brought specialized expertise that the company lacked.
+She's navigated the challenges of integration while maintaining her team's identity.
+She's become an informal bridge between "old" and "new" company cultures.
+She's tired of being treated as an outsider despite her years of contribution.
+WHAT SHE WANTS TO LEARN: Organizational politics, change management, and building influence in large companies.
 `,
-  sahil: `
-Sahil moved from India to Dallas 4 years ago on an internal transfer.
-He's built a strong network despite being far from his home country.
-He organizes the monthly cultural events and is known as a connector.
-He believes strongly in public recognition and celebrating wins.
-He misses the close-knit team culture from his previous office.
-WHAT HE WANTS TO LEARN: Leadership skills, public speaking, and how to run larger cross-functional initiatives.
+  jayden: `
+Jayden started in HR before moving into community management.
+He created the company's internal social platform and engagement programs.
+He organizes monthly virtual events, holiday celebrations, and team-building activities.
+He's passionate about creating genuine connections, not forced "fun."
+He tracks engagement metrics but believes culture can't be fully measured.
+WHAT HE WANTS TO LEARN: Measuring culture impact, event planning at scale, and inclusive community building.
 `,
-  ido: `
-Ido has seen the company through 3 mergers and 5 CEOs.
-He remembers when the company was 200 people and everyone knew each other.
-He's skeptical of new initiatives but deeply loyal to colleagues he trusts.
-He volunteers for community programs and values face-to-face relationships.
-He's the go-to person for institutional knowledge about why things are the way they are.
-WHAT HE WANTS TO LEARN: Modern collaboration tools (reluctantly), and how to mentor the next generation of managers.
+  robert: `
+Robert has been with the company through 4 technology platform changes.
+He's the principal architect and has deep knowledge of system evolution.
+He's seen fads come and go and is cautious about adopting trends without substance.
+He mentors senior engineers and is passionate about knowledge transfer.
+He prefers thoughtful discussions over quick Slack messages.
+WHAT HE WANTS TO LEARN: Modern cloud architectures, AI/ML applications, and effective mentorship techniques.
 `,
-  alex: `
-Alex has been the top sales performer in his region 7 out of the last 10 years.
-He measures everything in terms of deal impact and client relationships.
-He ignores most company emails unless they directly help him sell.
-He has a network of contacts across the industry that he's built over 17 years.
-He's competitive but also generous with sharing sales techniques with his team.
-WHAT HE WANTS TO LEARN: New sales technologies, AI tools for prospecting, and how to scale his methods to his team.
+  amanda: `
+Amanda has been a top performer in sales for 8 of her 10 years at the company.
+She's built a client portfolio that generates significant recurring revenue.
+She's known for her no-nonsense approach and ability to close complex deals.
+She resents administrative tasks that take her away from client relationships.
+She's generous with sharing her techniques with newer sales team members.
+WHAT SHE WANTS TO LEARN: Strategic account management, sales automation tools, and building a personal brand.
 `,
 };
 
@@ -127,4 +127,3 @@ export function getFullPersonaContext(persona: Persona): string {
   
   return basePrompt;
 }
-
