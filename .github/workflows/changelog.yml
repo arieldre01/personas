@@ -1,0 +1,153 @@
+name: Generate Changelog
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  changelog:
+    # Only run if the PR was merged (not just closed)
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git diff
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Cache Ollama model
+        uses: actions/cache@v4
+        id: cache-ollama
+        with:
+          path: ~/.ollama
+          key: ollama-phi3-mini-v1
+      
+      - name: Install Ollama
+        run: |
+          if ! command -v ollama &> /dev/null; then
+            echo "Installing Ollama..."
+            curl -fsSL https://ollama.com/install.sh | sh
+          fi
+      
+      - name: Start Ollama service
+        run: |
+          ollama serve &
+          # Wait for Ollama API to be ready (up to 60 seconds)
+          for i in {1..30}; do
+            if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+              echo "Ollama is ready!"
+              break
+            fi
+            echo "Waiting for Ollama... ($i/30)"
+            sleep 2
+          done
+      
+      - name: Pull phi3:mini model
+        run: |
+          if ! ollama list | grep -q "phi3:mini"; then
+            ollama pull phi3:mini
+          fi
+      
+      - name: Calculate new version
+        id: version
+        run: |
+          # Get current version from CHANGELOG.md
+          CURRENT_VERSION=$(grep -oP '## \[\K[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | head -1 || echo "0.0.0")
+          
+          if [ -z "$CURRENT_VERSION" ]; then
+            CURRENT_VERSION="0.0.0"
+          fi
+          
+          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+          
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          
+          # Version bump based on PR title
+          if [[ "$PR_TITLE" =~ ^(BREAKING|breaking|!) ]]; then
+            MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0
+          elif [[ "$PR_TITLE" =~ ^(feat|feature|Feat|Feature) ]]; then
+            MINOR=$((MINOR + 1)); PATCH=0
+          else
+            PATCH=$((PATCH + 1))
+          fi
+          
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+      
+      - name: Generate changelog entry with AI
+        id: ai_entry
+        run: |
+          # Run your changelog generator
+          python generate_changelog.py --ci
+          
+          # Extract the latest entry that was added
+          ENTRY=$(head -20 CHANGELOG.md | grep "^- " | head -1 | sed 's/^- //')
+          echo "entry=$ENTRY" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_ACTIONS: true
+      
+      - name: Add version and author to changelog
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          DATE=$(date +'%Y-%m-%d')
+          
+          # Read the AI-generated entry
+          AI_ENTRY="${{ steps.ai_entry.outputs.entry }}"
+          
+          # If AI entry is empty, use PR title as fallback
+          if [ -z "$AI_ENTRY" ]; then
+            AI_ENTRY="${{ github.event.pull_request.title }}"
+          fi
+          
+          # Create the versioned entry with author
+          NEW_SECTION="## [${NEW_VERSION}] - ${DATE}
+
+- ${AI_ENTRY} (#${PR_NUMBER}) by @${PR_AUTHOR}
+"
+          
+          # Find where to insert (after header, before first version)
+          HEADER_END=$(grep -n "^## \[" CHANGELOG.md | head -1 | cut -d: -f1)
+          
+          if [ -n "$HEADER_END" ]; then
+            # Remove the entry that generate_changelog.py added (it's under Unreleased)
+            # Then insert our versioned entry
+            sed -i '/^## \[Unreleased\]/,/^## \[/{ /^- /d; }' CHANGELOG.md
+            
+            # Insert new versioned section
+            head -n $((HEADER_END - 1)) CHANGELOG.md > CHANGELOG.tmp
+            echo "" >> CHANGELOG.tmp
+            echo "$NEW_SECTION" >> CHANGELOG.tmp
+            tail -n +$HEADER_END CHANGELOG.md >> CHANGELOG.tmp
+            mv CHANGELOG.tmp CHANGELOG.md
+          fi
+          
+          echo "Updated CHANGELOG.md:"
+          head -30 CHANGELOG.md
+      
+      - name: Commit and push changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if ! git diff --quiet CHANGELOG.md; then
+            git add CHANGELOG.md
+            git commit -m "docs: release v${{ steps.version.outputs.new_version }} - changelog for PR #${{ github.event.pull_request.number }}"
+            git push
+          fi
+
