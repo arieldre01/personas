@@ -1,5 +1,6 @@
 // Persona data with full psychological and communication profiles
 // Generation color coding for UI theming
+// NOTE: All personas are fictional examples for demonstration purposes
 
 export type Generation = 'Gen Z' | 'Gen Y' | 'Gen X' | 'Boomer';
 
@@ -57,244 +58,245 @@ export const generationColors: Record<Generation, { bg: string; text: string; bo
   },
 };
 
+// MOCK DATA - Fictional personas for demonstration
 export const personas: Persona[] = [
   {
-    id: 'maya',
-    name: 'Maya',
-    title: 'The Burdened Manager',
-    role: 'Software Engineering Manager',
-    location: "Israel (Ra'anana)",
-    age: 47,
+    id: 'sarah',
+    name: 'Sarah Chen',
+    title: 'The Multitasking Manager',
+    role: 'Engineering Team Lead',
+    location: 'San Francisco, CA',
+    age: 42,
     generation: 'Gen X',
-    tenure: '8 Years',
-    imageQuery: 'stressed corporate woman manager 40s',
-    quote: "Vacation without limits? For me that just means work without limits.",
+    tenure: '7 Years',
+    imageQuery: 'professional woman manager',
+    quote: "My calendar is my lifeline. If it's not scheduled, it doesn't exist.",
     psychology: {
-      stress: "The 'Sandwich' Effect: Pressured by HQ to cascade messages, pressured by team to solve local problems.",
-      motivation: 'Wants to be a trusted messenger but feels ill-equipped.',
+      stress: 'Constant context-switching between strategic planning and tactical firefighting.',
+      motivation: 'Building high-performing teams and seeing her people grow.',
       painPoints: [
-        'Information overload',
-        'Fear of missing out (FOMO) on critical info for her team',
+        'Too many meetings with no clear outcomes',
+        'Unclear priorities from leadership',
       ],
     },
     communication: {
       do: [
-        "Provide 'Pre-brief Kits' & talking points",
-        'Keep it bulleted and actionable',
+        'Send calendar invites with clear agendas',
+        'Use bullet points and action items',
       ],
       dont: [
-        'Send long newsletters',
-        "Assume she has time to read 'nice-to-have' content",
+        'Schedule last-minute meetings',
+        'Send walls of text without structure',
       ],
     },
   },
   {
-    id: 'ben',
-    name: 'Ben',
-    title: 'The Data-Driven Analyst',
-    role: 'Product Marketing Lead',
-    location: 'USA (New Jersey)',
-    age: 35,
+    id: 'marcus',
+    name: 'Marcus Johnson',
+    title: 'The Strategic Thinker',
+    role: 'Senior Product Manager',
+    location: 'Austin, TX',
+    age: 34,
+    generation: 'Gen Y',
+    tenure: '5 Years',
+    imageQuery: 'professional man thinking',
+    quote: "Show me the data, and I'll show you the path forward.",
+    psychology: {
+      stress: 'Making decisions without sufficient market research.',
+      motivation: 'Launching products that genuinely solve user problems.',
+      painPoints: [
+        'Stakeholders who want features without user validation',
+        'Rushed timelines that compromise quality',
+      ],
+    },
+    communication: {
+      do: [
+        'Back up proposals with user research',
+        'Present trade-offs clearly',
+      ],
+      dont: [
+        'Push ideas without supporting evidence',
+        'Ignore customer feedback',
+      ],
+    },
+  },
+  {
+    id: 'david',
+    name: 'David Williams',
+    title: 'The Field Expert',
+    role: 'Technical Consultant',
+    location: 'Chicago, IL',
+    age: 48,
+    generation: 'Gen X',
+    tenure: '12 Years',
+    imageQuery: 'man with laptop coffee shop',
+    quote: "I spend more time in airports than in the office. Make it mobile or forget it.",
+    psychology: {
+      stress: 'Being out of the loop while traveling to client sites.',
+      motivation: 'Solving complex client problems and building lasting relationships.',
+      painPoints: [
+        'Tools that don\'t work offline',
+        'Missing important updates while on the road',
+      ],
+    },
+    communication: {
+      do: [
+        'Send concise mobile-friendly updates',
+        'Record key meetings for async viewing',
+      ],
+      dont: [
+        'Require desktop-only tools',
+        'Expect immediate responses during travel',
+      ],
+    },
+  },
+  {
+    id: 'zoe',
+    name: 'Zoe Martinez',
+    title: 'The Digital Native',
+    role: 'UX Designer',
+    location: 'Brooklyn, NY',
+    age: 26,
+    generation: 'Gen Z',
+    tenure: '2 Years',
+    imageQuery: 'young woman creative office',
+    quote: "If you can't explain it in a TikTok, you probably don't understand it yourself.",
+    psychology: {
+      stress: 'Feeling unheard in meetings dominated by senior voices.',
+      motivation: 'Creating inclusive designs that make technology accessible to everyone.',
+      painPoints: [
+        'Outdated processes that slow innovation',
+        'Lack of mentorship opportunities',
+      ],
+    },
+    communication: {
+      do: [
+        'Use visual formats and short videos',
+        'Create space for fresh perspectives',
+      ],
+      dont: [
+        'Dismiss ideas based on experience level',
+        'Over-rely on text-heavy documentation',
+      ],
+    },
+  },
+  {
+    id: 'elena',
+    name: 'Elena Kowalski',
+    title: 'The Integration Specialist',
+    role: 'Systems Analyst',
+    location: 'Boston, MA',
+    age: 38,
     generation: 'Gen Y',
     tenure: '4 Years',
-    imageQuery: 'confident corporate man 30s office',
-    quote: "I trust logic and data. Emotional appeals are just fluff.",
+    imageQuery: 'woman working on computer',
+    quote: "I joined through the acquisition. Sometimes I still feel like a guest.",
     psychology: {
-      stress: 'Skeptical of corporate optimism.',
-      motivation: 'Ambition, Executive Trajectory, Intellectual challenge.',
+      stress: 'Navigating two different company cultures and systems.',
+      motivation: 'Proving the value of her team\'s expertise to the parent company.',
       painPoints: [
-        'Wasting time on social fluff',
-        'Vague messaging without metrics',
+        'Access issues with core company systems',
+        'Feeling excluded from key decisions',
       ],
     },
     communication: {
       do: [
-        'Use dashboards & metrics',
-        'Explain the strategic rationale',
+        'Include context about company history and acronyms',
+        'Ensure system access before sending tasks',
       ],
       dont: [
-        'Use emotional language',
-        'Send generic corporate optimism',
+        'Assume familiarity with legacy processes',
+        'Overlook integration team perspectives',
       ],
     },
   },
   {
-    id: 'oliver',
-    name: 'Oliver',
-    title: 'The Isolated Operator',
-    role: 'Service Partner',
-    location: 'UK',
+    id: 'jayden',
+    name: 'Jayden Park',
+    title: 'The Culture Champion',
+    role: 'Community Manager',
+    location: 'Seattle, WA',
+    age: 29,
+    generation: 'Gen Z',
+    tenure: '3 Years',
+    imageQuery: 'young man smiling office',
+    quote: "Work should be fun. If we're not connecting, we're just coworkers, not a team.",
+    psychology: {
+      stress: 'Remote work making it harder to build genuine connections.',
+      motivation: 'Creating an inclusive workplace where everyone feels they belong.',
+      painPoints: [
+        'Low engagement on internal platforms',
+        'Events that feel forced rather than organic',
+      ],
+    },
+    communication: {
+      do: [
+        'Make announcements interactive and engaging',
+        'Celebrate wins publicly',
+      ],
+      dont: [
+        'Send dry corporate memos',
+        'Ignore the human element in communications',
+      ],
+    },
+  },
+  {
+    id: 'robert',
+    name: 'Robert Thompson',
+    title: 'The Experienced Voice',
+    role: 'Principal Architect',
+    location: 'Denver, CO',
+    age: 56,
+    generation: 'Boomer',
+    tenure: '18 Years',
+    imageQuery: 'senior man professional office',
+    quote: "I've seen technologies come and go. What matters is solving real problems.",
+    psychology: {
+      stress: 'Constant pressure to adopt new tools without clear benefit.',
+      motivation: 'Mentoring the next generation and leaving a lasting legacy.',
+      painPoints: [
+        'Change for change\'s sake',
+        'Being dismissed as "old school"',
+      ],
+    },
+    communication: {
+      do: [
+        'Explain the "why" behind changes',
+        'Value institutional knowledge',
+      ],
+      dont: [
+        'Assume resistance means inability to adapt',
+        'Use trendy jargon without substance',
+      ],
+    },
+  },
+  {
+    id: 'amanda',
+    name: 'Amanda Brooks',
+    title: 'The Revenue Driver',
+    role: 'Account Executive',
+    location: 'Miami, FL',
     age: 44,
     generation: 'Gen X',
-    tenure: '15 Years',
-    imageQuery: 'busy man on mobile phone construction site or office',
-    quote: "If the link doesn't work on my mobile, I'm not reading it.",
+    tenure: '10 Years',
+    imageQuery: 'professional woman confident',
+    quote: "Every minute I spend on internal admin is a minute I'm not closing deals.",
     psychology: {
-      stress: 'Mobile Hostility: Frustrated by non-mobile friendly tools.',
-      motivation: "Being the 'Go-To' guy for his site.",
+      stress: 'Administrative burden cutting into selling time.',
+      motivation: 'Crushing quotas and being recognized as a top performer.',
       painPoints: [
-        'Feeling disconnected from HQ',
-        'Broken links',
-        'Login walls',
+        'Internal processes that slow down deal cycles',
+        'Lack of competitive intelligence',
       ],
     },
     communication: {
       do: [
-        'Push notifications',
-        'Zero-friction mobile content',
+        'Lead with the business impact',
+        'Provide ready-to-use sales materials',
       ],
       dont: [
-        'Require VPN logins for simple updates',
-        'Send long emails',
-      ],
-    },
-  },
-  {
-    id: 'priya',
-    name: 'Priya',
-    title: 'The Anxious Zoomer',
-    role: 'Junior Developer',
-    location: 'India (Pune)',
-    age: 24,
-    generation: 'Gen Z',
-    tenure: '6 Months',
-    imageQuery: 'young indian woman software developer office',
-    quote: "Just tell me how this impacts my role. Not paragraphs.",
-    psychology: {
-      stress: "Content Fatigue: Can't distinguish critical policy from cafeteria updates.",
-      motivation: "Validation: Needs to feel 'seen' and that she is growing.",
-      painPoints: [
-        'Overwhelmed by complexity',
-        'Need for social belonging',
-      ],
-    },
-    communication: {
-      do: [
-        'Visual formats',
-        'Short videos',
-        "Framing things as 'growth opportunities'",
-      ],
-      dont: [
-        'Jargon-heavy updates',
-        'Ambiguous instructions',
-      ],
-    },
-  },
-  {
-    id: 'anna',
-    name: 'Anna',
-    title: 'Out of Site, Out of Mind',
-    role: 'Network Expert (Acquired Company)',
-    location: 'Dublin',
-    age: 36,
-    generation: 'Gen Y',
-    tenure: '3 Years (Acquired)',
-    imageQuery: 'woman in casual office setting looking at laptop',
-    quote: "We don't feel part of the company yet. We are missing info all the time.",
-    psychology: {
-      stress: 'Limbo State: Feels like an outsider; fears for job security.',
-      motivation: "Wants 'Big Picture' info to validate she belongs.",
-      painPoints: [
-        'Broken links (no access to main IT systems)',
-        "Feeling 'second class'",
-      ],
-    },
-    communication: {
-      do: [
-        'Localized onboarding kits',
-        'Ensure access rights work before sending',
-      ],
-      dont: [
-        'Assume she understands legacy acronyms',
-      ],
-    },
-  },
-  {
-    id: 'sahil',
-    name: 'Sahil',
-    title: 'The Social Engager',
-    role: 'Program Manager',
-    location: 'Dallas (Expat)',
-    age: 28,
-    generation: 'Gen Z',
-    tenure: '6 Years',
-    imageQuery: 'young man happy office social event',
-    quote: "Town halls are just an opportunity to meet the guys.",
-    psychology: {
-      stress: 'Social Isolation (as an expat).',
-      motivation: 'Recognition, Connection, Building culture.',
-      painPoints: [
-        'Boring top-down updates',
-        'Lack of social interaction',
-      ],
-    },
-    communication: {
-      do: [
-        'Interactive campaigns',
-        'Public recognition',
-        'Social media style updates',
-      ],
-      dont: [
-        'Dry corporate memos with no engagement hooks',
-      ],
-    },
-  },
-  {
-    id: 'ido',
-    name: 'Ido',
-    title: 'The Traditionalist Connector',
-    role: 'Software Engineering Manager',
-    location: "Israel (Ra'anana)",
-    age: 58,
-    generation: 'Boomer',
-    tenure: '15 Years',
-    imageQuery: 'older man glasses manager office',
-    quote: "Do they genuinely want to hear my input? I find it hard to believe.",
-    psychology: {
-      stress: 'Change Fatigue.',
-      motivation: 'Loyalty, Face-to-face connection, Volunteering.',
-      painPoints: [
-        "Cynicism toward 'corporate speak'",
-        'Digital-only communication',
-      ],
-    },
-    communication: {
-      do: [
-        'Face-to-face meetings',
-        "Honest 'no spin' messages",
-      ],
-      dont: [
-        'Over-polished videos',
-        'Scripted language',
-      ],
-    },
-  },
-  {
-    id: 'alex',
-    name: 'Alex',
-    title: 'The Sales Achiever',
-    role: 'Customer Business Executive',
-    location: 'USA (Plano)',
-    age: 49,
-    generation: 'Gen X',
-    tenure: '17 Years',
-    imageQuery: 'man suit sales confident',
-    quote: "What's in it for me? (WIIFM)",
-    psychology: {
-      stress: "Time is money; ignores 'Monday Morning' fluff.",
-      motivation: 'Beating the competition, Closing deals.',
-      painPoints: [
-        "Generic updates that don't help him sell",
-      ],
-    },
-    communication: {
-      do: [
-        'Bottom Line Up Front (BLUF)',
-        'Competitor Intel',
-        'Sales Tools',
-      ],
-      dont: [
-        'One-size-fits-all newsletters',
+        'Bury important info in long emails',
+        'Create more paperwork without clear ROI',
       ],
     },
   },
@@ -305,16 +307,9 @@ export function getPersonaById(id: string): Persona | undefined {
   return personas.find((p) => p.id === id);
 }
 
-// Map persona IDs to their local image files and positioning
+// Mock personas use UI Avatars - no local images needed
 const personaImageMap: Record<string, { src: string; position?: string }> = {
-  maya: { src: '/images/personas/Maya_0.png' },
-  ben: { src: '/images/personas/Ben_0.png' },
-  oliver: { src: '/images/personas/Oliver_0.png' },
-  priya: { src: '/images/personas/Priya_slide10_0.png' },
-  anna: { src: '/images/personas/Anna_0.png' },
-  sahil: { src: '/images/personas/Sahil_0.png' },
-  ido: { src: '/images/personas/Ido_0.png' },
-  alex: { src: '/images/personas/Alex_0.png', position: 'top' }, // Full body shot - focus on face
+  // Empty - all personas will use UI Avatars fallback
 };
 
 // Helper function to get image URL for a persona
@@ -332,4 +327,3 @@ export function getPersonaImagePosition(persona: Persona): string {
   const imageData = personaImageMap[persona.id];
   return imageData?.position || 'center';
 }
-
