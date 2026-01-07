@@ -1,126 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { personas } from '@/lib/personas';
+import { generateText, isGeminiAvailable, isOllamaAvailable } from '@/lib/ai-provider';
 
-const OLLAMA_API_URL = process.env.OLLAMA_URL || 'http://localhost:11434/api/generate';
-const MODEL = process.env.OLLAMA_MODEL || 'phi3:mini';
-
-// Keyword-based persona matching profiles - based on concrete details
+// Keyword-based persona matching profiles for fallback
 const personaKeywords: Record<string, { keywords: string[]; weight: number }[]> = {
-  maya: [
-    // Role: Software Engineering Manager, 47, Gen X, 8 years
-    { keywords: ['manager', 'team lead', 'leading', 'management', 'supervise', 'manage people', 'manage a team'], weight: 4 },
-    { keywords: ['40s', 'gen x', 'forties', '45', '46', '47', '48', '49'], weight: 3 },
-    { keywords: ['engineering', 'software', 'tech', 'developer', 'development'], weight: 2 },
-    { keywords: ['8 years', '7 years', '9 years', '10 years', 'several years'], weight: 2 },
-    { keywords: ['israel', 'raanana', 'tel aviv'], weight: 2 },
-    { keywords: ['desk', 'office'], weight: 1 },
+  sarah: [
+    { keywords: ['manager', 'team lead', 'leading', 'management', 'supervise'], weight: 4 },
+    { keywords: ['40s', 'gen x', 'forties', '42', '43', '44'], weight: 3 },
+    { keywords: ['engineering', 'software', 'tech', 'developer'], weight: 2 },
+    { keywords: ['calendar', 'meetings', 'scheduling'], weight: 2 },
   ],
-  ben: [
-    // Role: Product Marketing Lead, 35, Gen Y/Millennial, 4 years
-    { keywords: ['product', 'marketing', 'product marketing', 'product manager', 'pm'], weight: 4 },
-    { keywords: ['30s', 'millennial', 'gen y', 'thirties', '33', '34', '35', '36', '37'], weight: 3 },
-    { keywords: ['4 years', '3 years', '5 years', 'few years'], weight: 2 },
-    { keywords: ['individual contributor', 'ic', 'not managing'], weight: 2 },
-    { keywords: ['usa', 'us', 'america', 'new jersey', 'east coast'], weight: 2 },
-    { keywords: ['desk', 'office', 'laptop'], weight: 1 },
+  marcus: [
+    { keywords: ['product', 'strategy', 'data', 'analytics', 'research'], weight: 4 },
+    { keywords: ['30s', 'millennial', 'gen y', 'thirties'], weight: 3 },
+    { keywords: ['decisions', 'evidence', 'validation'], weight: 2 },
   ],
-  oliver: [
-    // Role: Service Partner, 44, Gen X, 15 years, UK, Field/Mobile
-    { keywords: ['field', 'on the go', 'mobile', 'frontline', 'on-site', 'site', 'deskless'], weight: 4 },
-    { keywords: ['service', 'partner', 'technician', 'engineer', 'operations'], weight: 3 },
-    { keywords: ['40s', 'gen x', 'forties', '42', '43', '44', '45', '46'], weight: 2 },
-    { keywords: ['15 years', '10+ years', 'more than 10', 'long time', 'many years', 'veteran'], weight: 3 },
-    { keywords: ['uk', 'britain', 'england', 'london'], weight: 2 },
-    { keywords: ['not at desk', 'rarely at desk', 'always moving'], weight: 2 },
+  david: [
+    { keywords: ['field', 'travel', 'mobile', 'on the go', 'consultant'], weight: 4 },
+    { keywords: ['40s', 'gen x', 'forties', '48'], weight: 3 },
+    { keywords: ['client', 'remote', 'airport'], weight: 2 },
   ],
-  priya: [
-    // Role: Junior Developer, 24, Gen Z, 6 months, India
-    { keywords: ['junior', 'new', 'entry level', 'fresh', 'graduate', 'intern', 'starting out'], weight: 4 },
-    { keywords: ['20s', 'gen z', 'twenties', '22', '23', '24', '25', '26', 'young'], weight: 3 },
-    { keywords: ['developer', 'engineer', 'programmer', 'software', 'coding'], weight: 2 },
-    { keywords: ['less than 1 year', '6 months', 'few months', 'just started', 'recently joined', 'new employee'], weight: 3 },
-    { keywords: ['india', 'pune', 'bangalore', 'mumbai'], weight: 2 },
-    { keywords: ['desk', 'office', 'hybrid'], weight: 1 },
+  zoe: [
+    { keywords: ['design', 'ux', 'creative', 'visual', 'user experience'], weight: 4 },
+    { keywords: ['20s', 'gen z', 'twenties', 'young', '26'], weight: 3 },
+    { keywords: ['tiktok', 'video', 'inclusive'], weight: 2 },
   ],
-  anna: [
-    // Role: Network Expert (Acquired), 36, Gen Y, 3 years (acquired), Dublin
-    { keywords: ['acquired', 'acquisition', 'merger', 'bought', 'joined through'], weight: 5 },
-    { keywords: ['recently joined', 'new to company', '3 years', '2 years', 'joined acquisition'], weight: 3 },
-    { keywords: ['30s', 'millennial', 'gen y', 'thirties', '34', '35', '36', '37', '38'], weight: 2 },
-    { keywords: ['network', 'expert', 'specialist', 'technical'], weight: 2 },
-    { keywords: ['dublin', 'ireland', 'europe'], weight: 2 },
-    { keywords: ['remote', 'work from home', 'hybrid'], weight: 1 },
+  elena: [
+    { keywords: ['acquisition', 'merger', 'integration', 'systems'], weight: 5 },
+    { keywords: ['30s', 'millennial', 'gen y'], weight: 2 },
+    { keywords: ['analyst', 'technical'], weight: 2 },
   ],
-  sahil: [
-    // Role: Program Manager, 28, Gen Z, 6 years, Dallas (Expat)
-    { keywords: ['program manager', 'project manager', 'coordinator', 'program'], weight: 3 },
-    { keywords: ['20s', 'gen z', 'late twenties', '27', '28', '29'], weight: 3 },
-    { keywords: ['6 years', '5 years', '7 years', 'several years'], weight: 2 },
-    { keywords: ['expat', 'relocated', 'moved', 'international', 'abroad', 'foreign'], weight: 4 },
-    { keywords: ['dallas', 'texas', 'usa', 'us'], weight: 2 },
-    { keywords: ['mix', 'hybrid', 'office'], weight: 1 },
+  jayden: [
+    { keywords: ['community', 'culture', 'engagement', 'team building'], weight: 4 },
+    { keywords: ['20s', 'gen z', 'twenties'], weight: 3 },
+    { keywords: ['remote', 'connection', 'fun'], weight: 2 },
   ],
-  ido: [
-    // Role: Software Engineering Manager, 58, Boomer, 15 years, Israel
-    { keywords: ['50s', '60s', 'boomer', 'fifties', 'sixties', '55', '56', '57', '58', '59', '60', 'older', 'senior'], weight: 4 },
-    { keywords: ['15 years', '10+ years', 'more than 10', 'long time', 'many years', 'veteran', '20 years'], weight: 3 },
-    { keywords: ['manager', 'team lead', 'engineering manager', 'software manager'], weight: 2 },
-    { keywords: ['israel', 'raanana', 'tel aviv'], weight: 2 },
-    { keywords: ['traditional', 'experienced', 'long tenure'], weight: 2 },
-    { keywords: ['desk', 'office'], weight: 1 },
+  robert: [
+    { keywords: ['senior', 'veteran', 'experienced', 'architect', 'principal'], weight: 4 },
+    { keywords: ['50s', 'boomer', 'fifties', '56'], weight: 4 },
+    { keywords: ['mentor', 'legacy', 'long tenure'], weight: 3 },
   ],
-  alex: [
-    // Role: Customer Business Executive (Sales), 49, Gen X, 17 years, USA
-    { keywords: ['sales', 'business', 'executive', 'customer', 'account', 'revenue', 'deals'], weight: 4 },
-    { keywords: ['customer facing', 'client facing', 'external'], weight: 3 },
-    { keywords: ['40s', 'gen x', 'late forties', '47', '48', '49', '50'], weight: 2 },
-    { keywords: ['17 years', '15 years', '10+ years', 'more than 10', 'long time', 'veteran'], weight: 2 },
-    { keywords: ['usa', 'us', 'plano', 'texas', 'dallas'], weight: 2 },
-    { keywords: ['on the go', 'mobile', 'traveling', 'client meetings'], weight: 2 },
+  amanda: [
+    { keywords: ['sales', 'revenue', 'deals', 'account', 'closing'], weight: 4 },
+    { keywords: ['40s', 'gen x', 'forties'], weight: 3 },
+    { keywords: ['quota', 'customer', 'business'], weight: 2 },
   ],
 };
 
 // Reason templates for each persona
 const personaReasons: Record<string, string[]> = {
-  maya: [
-    "Your profile as a manager in your 40s with several years at the company matches Maya, a Software Engineering Manager.",
-    "Like Maya, you're in a management role balancing team needs with organizational demands.",
-    "Your experience level and leadership role aligns with Maya's position as The Burdened Manager.",
+  sarah: [
+    "Your profile as a manager with a focus on organization matches Sarah, the Multitasking Manager.",
+    "Like Sarah, you balance strategic planning with day-to-day team management.",
   ],
-  ben: [
-    "Your profile as a product/marketing professional in your 30s matches Ben, the Data-Driven Analyst.",
-    "Like Ben, you're a mid-career professional focused on strategic work.",
-    "Your role and experience level aligns with Ben's position as a Product Marketing Lead.",
+  marcus: [
+    "Your data-driven, strategic approach matches Marcus, the Strategic Thinker.",
+    "Like Marcus, you value research and evidence-based decision making.",
   ],
-  oliver: [
-    "Your work in the field and mobile-first work style matches Oliver, The Isolated Operator.",
-    "Like Oliver, you work away from a traditional desk and need information on-the-go.",
-    "Your long tenure and field-based role aligns with Oliver's experience as a Service Partner.",
+  david: [
+    "Your mobile, field-based work style matches David, the Field Expert.",
+    "Like David, you need information accessible on the go.",
   ],
-  priya: [
-    "As a newer, younger employee, your profile matches Priya, The Anxious Zoomer.",
-    "Like Priya, you're early in your career and still learning the ropes.",
-    "Your junior role and Gen Z age group aligns with Priya's profile as a Junior Developer.",
+  zoe: [
+    "Your creative, digital-native approach matches Zoe, the Digital Native.",
+    "Like Zoe, you value visual communication and fresh perspectives.",
   ],
-  anna: [
-    "Your background of joining through an acquisition matches Anna, who came from an acquired company.",
-    "Like Anna, you're integrating into a new organizational culture.",
-    "Your experience joining through a merger aligns with Anna's 'Out of Site, Out of Mind' persona.",
+  elena: [
+    "Your experience with company integration matches Elena, the Integration Specialist.",
+    "Like Elena, you navigate multiple organizational cultures.",
   ],
-  sahil: [
-    "Your profile as a program manager who relocated internationally matches Sahil, The Social Engager.",
-    "Like Sahil, you're building connections in a new location.",
-    "Your expat experience and role aligns with Sahil's position as a Program Manager abroad.",
+  jayden: [
+    "Your focus on team connection matches Jayden, the Culture Champion.",
+    "Like Jayden, you believe work should be engaging and fun.",
   ],
-  ido: [
-    "Your profile as a senior professional in your 50s+ with long tenure matches Ido, The Traditionalist Connector.",
-    "Like Ido, you bring years of experience and perspective to the organization.",
-    "Your seniority and long tenure aligns with Ido's role as a veteran manager.",
+  robert: [
+    "Your extensive experience matches Robert, the Experienced Voice.",
+    "Like Robert, you bring deep institutional knowledge and mentorship.",
   ],
-  alex: [
-    "Your sales/customer-facing role matches Alex, The Sales Achiever.",
-    "Like Alex, you're focused on customers and driving business results.",
-    "Your client-facing role and experience level aligns with Alex's position as a Customer Business Executive.",
+  amanda: [
+    "Your results-driven sales focus matches Amanda, the Revenue Driver.",
+    "Like Amanda, you prioritize efficiency and closing deals.",
   ],
 };
 
@@ -147,10 +106,9 @@ function matchPersonaByKeywords(text: string): { personaId: string; confidence: 
   const [topPersonaId, topScore] = sortedPersonas[0];
   const [, secondScore] = sortedPersonas[1] || [null, 0];
   
-  // Calculate confidence based on score difference and absolute score
+  // Calculate confidence
   let confidence: number;
   if (topScore === 0) {
-    // No keywords matched - low confidence random match
     confidence = 0.55;
   } else if (topScore >= 8) {
     confidence = Math.min(0.92, 0.75 + (topScore - secondScore) * 0.03);
@@ -160,7 +118,6 @@ function matchPersonaByKeywords(text: string): { personaId: string; confidence: 
     confidence = Math.min(0.75, 0.55 + topScore * 0.04);
   }
   
-  // Pick a random reason for variety
   const reasons = personaReasons[topPersonaId] || ["Based on your work style description."];
   const reason = reasons[Math.floor(Math.random() * reasons.length)];
   
@@ -171,7 +128,7 @@ function matchPersonaByKeywords(text: string): { personaId: string; confidence: 
   };
 }
 
-// Build a summary of all personas for the AI
+// Build persona summaries for AI prompt
 const personaSummaries = personas.map(p => 
   `${p.id}: ${p.name} - "${p.title}" (${p.generation}, ${p.role})
    Quote: "${p.quote}"
@@ -194,77 +151,10 @@ INSTRUCTIONS:
 3. Respond in this EXACT JSON format (nothing else):
 {"personaId": "id_here", "confidence": 0.85, "reason": "Brief 1-2 sentence explanation"}
 
-// Smart keyword-based matching function
-function matchPersonaByKeywords(text: string): { personaId: string | null; confidence: number; reason: string } {
-  const lowerText = text.toLowerCase();
-  
-  // First check if we have meaningful content
-  if (!hasMeaningfulContent(text)) {
-    return {
-      personaId: null,
-      confidence: 0,
-      reason: "I need more information about you to find a match. Please tell me about your job role, how long you've been working, your age group, or whether you work at a desk or in the field.",
-    };
-  }
-  
-  const scores: Record<string, number> = {};
-  
-  // Calculate scores for each persona
-  for (const [personaId, keywordGroups] of Object.entries(personaKeywords)) {
-    scores[personaId] = 0;
-    
-    for (const group of keywordGroups) {
-      for (const keyword of group.keywords) {
-        if (lowerText.includes(keyword.toLowerCase())) {
-          scores[personaId] += group.weight;
-        }
-      }
-    }
-  }
-  
-  // Find the best match
-  const sortedPersonas = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-  const [topPersonaId, topScore] = sortedPersonas[0];
-  const [, secondScore] = sortedPersonas[1] || [null, 0];
-  
-  // If no keywords matched at all, ask for more info
-  if (topScore === 0) {
-    return {
-      personaId: null,
-      confidence: 0,
-      reason: "I couldn't find enough details to match you. Could you tell me more about your role, experience level, or how you typically work?",
-    };
-  }
-  
-  // Calculate confidence based on score
-  let confidence: number;
-  if (topScore >= 8) {
-    confidence = Math.min(0.92, 0.75 + (topScore - secondScore) * 0.03);
-  } else if (topScore >= 5) {
-    confidence = Math.min(0.80, 0.60 + (topScore - secondScore) * 0.03);
-  } else if (topScore >= 3) {
-    confidence = Math.min(0.65, 0.45 + topScore * 0.05);
-  } else {
-    // Score too low - not confident enough
-    return {
-      personaId: null,
-      confidence: topScore * 0.15,
-      reason: "I need a bit more information to find your best match. What's your job role? How long have you been at the company? Do you manage people?",
-    };
-  }
-  
-  // Generate reason based on the persona
-  const persona = personas.find(p => p.id === topPersonaId);
-  const reason = persona 
-    ? `Your profile matches ${persona.name}, ${persona.title}. ${persona.role} with similar characteristics.`
-    : 'Based on your description.';
-  
-  return {
-    personaId: topPersonaId,
-    confidence: Math.round(confidence * 100) / 100,
-    reason,
-  };
-}
+IMPORTANT: 
+- personaId must be one of: ${personas.map(p => p.id).join(', ')}
+- confidence should be between 0.5 and 0.95
+- Keep the reason concise (1-2 sentences max)`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -277,41 +167,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build the full text for analysis
-    const fullText = context 
-      ? `${context}\n${userText}`
-      : userText;
+    const fullText = context ? `${context}\n${userText}` : userText;
 
-    // Try Ollama first, but don't wait too long
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-      const response = await fetch(OLLAMA_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: MODEL,
-          prompt: `${SYSTEM_PROMPT}\n\nUser description: ${fullText}\n\nRespond with JSON only:`,
-          stream: false,
-          options: {
-            temperature: 0.3,
-            top_p: 0.9,
-            num_predict: 150,
-            num_ctx: 4096,
-          },
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const data = await response.json();
-        const generatedText = data.response?.trim() || '';
+    // Try AI-based matching first (Gemini or Ollama)
+    const canUseAI = isGeminiAvailable() || await isOllamaAvailable();
+    
+    if (canUseAI) {
+      try {
+        const { text: aiResponse, provider } = await generateText(
+          SYSTEM_PROMPT,
+          `User description: ${fullText}\n\nRespond with JSON only:`
+        );
 
         // Try to parse the JSON response
-        const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
           
@@ -322,14 +191,13 @@ export async function POST(request: NextRequest) {
               personaId: parsed.personaId,
               confidence: Math.min(0.95, Math.max(0.5, parsed.confidence || 0.7)),
               reason: parsed.reason || 'Based on your description',
-              source: 'ai',
+              source: provider,
             });
           }
         }
+      } catch (aiError) {
+        console.warn('AI matching failed, using keyword fallback:', aiError);
       }
-    } catch (ollamaError) {
-      // Ollama not available or timed out - continue to keyword matching
-      console.log('Ollama unavailable, using keyword matching');
     }
 
     // Fallback: Smart keyword-based matching
@@ -343,7 +211,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Persona match API error:', error);
     
-    // Even on error, try to return something useful
     const fallbackMatch = matchPersonaByKeywords('general workplace');
     return NextResponse.json({
       ...fallbackMatch,
@@ -351,4 +218,3 @@ export async function POST(request: NextRequest) {
     });
   }
 }
-
