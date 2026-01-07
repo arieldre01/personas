@@ -1,13 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const OLLAMA_API_URL = process.env.OLLAMA_URL || 'http://localhost:11434/api/generate';
-const MODEL = process.env.OLLAMA_MODEL || 'phi3:mini';
+import { generateText, isGeminiAvailable, isOllamaAvailable } from '@/lib/ai-provider';
 
 interface Answer {
   field: string;
   question: string;
   answer: string;
 }
+
+const SYSTEM_PROMPT = `You are helping complete a workplace persona profile.
+Based on the provided answers, extract and update the persona fields.
+
+Return ONLY a JSON object with the updated fields (not the entire persona, just the fields that need updating).
+
+For example, if the answer provides the name "Sarah" and the stress trigger is "tight deadlines", return:
+{
+  "name": "Sarah",
+  "psychology": {
+    "stress": "tight deadlines"
+  }
+}
+
+IMPORTANT: Return valid JSON only, no explanations.`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,73 +35,37 @@ export async function POST(request: NextRequest) {
       .map((a: Answer) => `${a.question}\nAnswer: ${a.answer}`)
       .join('\n\n');
 
-    const prompt = `You are helping complete a workplace persona profile.
-
-Current persona data:
+    const userPrompt = `Current persona data:
 ${JSON.stringify(currentPersona, null, 2)}
 
 Additional information provided:
 ${answersText}
 
-Based on the additional information, update the persona with the new data.
-Return ONLY a JSON object with the updated fields (not the entire persona, just the fields that need updating).
+Based on the additional information, return the updated fields as JSON:`;
 
-For example, if the answer provides the name "Sarah" and the stress trigger is "tight deadlines", return:
-{
-  "name": "Sarah",
-  "psychology": {
-    "stress": "tight deadlines"
-  }
-}
+    // Try AI-based completion (Gemini or Ollama)
+    const canUseAI = isGeminiAvailable() || await isOllamaAvailable();
+    
+    if (canUseAI) {
+      try {
+        const { text: aiResponse } = await generateText(SYSTEM_PROMPT, userPrompt);
 
-JSON response:`;
+        // Find JSON in the response
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const updates = JSON.parse(jsonMatch[0]);
+          return NextResponse.json({ persona: updates });
+        }
+      } catch (aiError) {
+        console.warn('AI completion failed, using simple parsing:', aiError);
+      }
+    }
 
-    const response = await fetch(OLLAMA_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: MODEL,
-        prompt,
-        stream: false,
-        options: {
-          temperature: 0.3,
-          num_predict: 500,
-          num_ctx: 4096,
-        },
-      }),
+    // Fallback to simple parsing without AI
+    return NextResponse.json({
+      persona: parseAnswersSimple(currentPersona, answers),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Ollama error:', errorText);
-      
-      // Fall back to simple parsing without AI
-      return NextResponse.json({
-        persona: parseAnswersSimple(currentPersona, answers),
-      });
-    }
-
-    const data = await response.json();
-    let generatedText = data.response?.trim() || '';
-
-    try {
-      // Find JSON in the response
-      const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const updates = JSON.parse(jsonMatch[0]);
-        return NextResponse.json({ persona: updates });
-      } else {
-        // Fall back to simple parsing
-        return NextResponse.json({
-          persona: parseAnswersSimple(currentPersona, answers),
-        });
-      }
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
-      return NextResponse.json({
-        persona: parseAnswersSimple(currentPersona, answers),
-      });
-    }
   } catch (error) {
     console.error('Complete persona error:', error);
     return NextResponse.json({
@@ -143,4 +120,3 @@ function parseAnswersSimple(currentPersona: Record<string, unknown>, answers: An
 
   return updates;
 }
-
