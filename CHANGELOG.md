@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
+- feat: integrate Google Gemini API with cascading fallback (Gemini > O… (#9)
 - feat: replace real personas with mock data for security (#8)
 - Fix: Require enough info before matching persona (#6)
 - Improve Persona Finder with free-form writing and keyword matching (#5)
