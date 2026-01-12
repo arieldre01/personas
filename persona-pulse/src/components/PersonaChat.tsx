@@ -273,7 +273,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
   };
 
   return (
-    <div className="flex flex-col h-[400px]">
+    <div className="flex flex-col h-full min-h-[400px] max-h-[500px]">
       {/* Status indicator */}
       <div className="flex items-center justify-between px-4 py-2 border-b text-xs">
         <div className="flex items-center gap-2">
@@ -317,7 +317,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
       {/* Messages */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+        className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 scroll-smooth"
       >
         {/* Empty State - shown when only initial greeting exists */}
         {messages.length === 1 && !isTyping && (
