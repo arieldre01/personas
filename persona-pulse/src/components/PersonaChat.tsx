@@ -273,7 +273,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-[400px] max-h-[500px]">
+    <div className="flex flex-col h-[350px]">
       {/* Status indicator */}
       <div className="flex items-center justify-between px-4 py-2 border-b text-xs">
         <div className="flex items-center gap-2">

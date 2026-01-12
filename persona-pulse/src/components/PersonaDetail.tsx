@@ -258,7 +258,7 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
           </TabsContent>
 
           {/* Chat Tab */}
-          <TabsContent value="chat" className="flex-1 mt-0 data-[state=active]:flex data-[state=active]:flex-col min-h-0">
+          <TabsContent value="chat" className="mt-0 overflow-hidden">
             <PersonaChat persona={persona} />
           </TabsContent>
         </Tabs>
