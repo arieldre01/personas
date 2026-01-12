@@ -451,26 +451,26 @@ export function PersonaChat({ persona }: PersonaChatProps) {
       )}
 
       {/* Input */}
-      <div className="flex-shrink-0 border-t p-4">
-        <div className="flex gap-2">
+      <div className="flex-shrink-0 border-t p-4 pb-5">
+        <div className="flex gap-3">
           <Textarea
             placeholder={`Message ${persona.name}...`}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="min-h-[44px] max-h-[120px] resize-none"
-            rows={1}
+            className="min-h-[52px] max-h-[120px] resize-none text-base"
+            rows={2}
           />
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isTyping}
             size="icon"
-            className={colors.badge}
+            className={`${colors.badge} h-[52px] w-[52px]`}
           >
             {isTyping ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             )}
           </Button>
         </div>
