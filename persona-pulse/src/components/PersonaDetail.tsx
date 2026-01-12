@@ -26,7 +26,9 @@ import {
   MessageSquare,
   User,
   MessageCircle,
+  X,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface PersonaDetailProps {
   persona: Persona | null;
@@ -70,7 +72,18 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
 
         <DialogHeader className="flex-shrink-0">
           {/* Profile Header */}
-          <div className={`-mx-6 -mt-6 mb-4 ${colors.bg} p-6`}>
+          <div className={`-mx-6 -mt-6 mb-4 ${colors.bg} p-6 relative`}>
+            {/* Close Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 shadow-sm backdrop-blur-sm transition-all hover:scale-105"
+              aria-label="Close dialog"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+
             <div className="flex items-start gap-6">
               {/* Avatar */}
               <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-full ring-4 ring-white dark:ring-gray-800 shadow-lg">

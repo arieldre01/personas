@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Persona, generationColors } from '@/lib/personas';
 import { getFullPersonaContext } from '@/lib/persona-prompts';
-import { Send, Loader2, Wifi, WifiOff, Trash2, Sparkles } from 'lucide-react';
+import { Send, Loader2, Wifi, WifiOff, Trash2, Sparkles, RefreshCw, MessageCircle } from 'lucide-react';
 import { getPersonaImage, getPersonaImagePosition } from '@/lib/personas';
 import { saveChat, loadChat, clearChat } from '@/lib/chat-storage';
 
@@ -35,17 +35,33 @@ export function PersonaChat({ persona }: PersonaChatProps) {
   const [aiProvider, setAiProvider] = useState<AIProvider>('mock');
   const [providerStatus, setProviderStatus] = useState<ProviderStatus>('checking');
   const [providerName, setProviderName] = useState('Checking...');
+  const [failedMessageId, setFailedMessageId] = useState<string | null>(null);
+  const [lastFailedUserMessage, setLastFailedUserMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const colors = generationColors[persona.generation];
   const personaContext = getFullPersonaContext(persona);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (immediate = false) => {
+    if (immediate) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+    } else {
+      // Small delay for smoother scrolling during streaming
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 50);
+    }
   };
 
+  // Scroll on new messages
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Scroll on initial load
+  useEffect(() => {
+    scrollToBottom(true);
+  }, []);
 
   // Load saved messages on mount
   useEffect(() => {
@@ -100,24 +116,32 @@ export function PersonaChat({ persona }: PersonaChatProps) {
     }
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isTyping) return;
+  const sendMessage = async (messageContent: string, isRetry = false) => {
+    if (!messageContent.trim() || isTyping) return;
+
+    // Clear any previous failed state
+    setFailedMessageId(null);
+    setLastFailedUserMessage(null);
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input.trim(),
+      content: messageContent.trim(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInput('');
+    if (!isRetry) {
+      setMessages((prev) => [...prev, userMessage]);
+      setInput('');
+    }
     setIsTyping(true);
 
     const personaMessageId = (Date.now() + 1).toString();
 
     try {
       // Build conversation history for context
-      const conversationHistory = messages
+      const currentMessages = isRetry ? messages : [...messages, userMessage];
+      const conversationHistory = currentMessages
+        .filter(m => !m.content.includes("I'm having trouble connecting"))
         .map((m) => `${m.role === 'user' ? 'User' : persona.name}: ${m.content}`)
         .join('\n');
 
@@ -125,7 +149,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `${conversationHistory}\nUser: ${userMessage.content}`,
+          message: `${conversationHistory}\nUser: ${messageContent}`,
           personaContext,
           personaId: persona.id,
           stream: true,
@@ -137,6 +161,11 @@ export function PersonaChat({ persona }: PersonaChatProps) {
         const usedProvider = response.headers.get('X-AI-Provider') as AIProvider;
         if (usedProvider) {
           setAiProvider(usedProvider);
+        }
+
+        // If retrying, remove the failed message first
+        if (isRetry) {
+          setMessages((prev) => prev.filter(m => m.id !== failedMessageId));
         }
 
         // Add empty persona message that we'll stream into
@@ -179,22 +208,38 @@ export function PersonaChat({ persona }: PersonaChatProps) {
           }
         }
       } else {
-        // API failed - show error message
+        // API failed - show error message with retry option
+        const errorMessageId = personaMessageId;
         setMessages((prev) => [...prev, {
-          id: personaMessageId,
+          id: errorMessageId,
           role: 'persona',
-          content: "I'm having trouble connecting right now. Please try again in a moment.",
+          content: "I'm having trouble connecting right now.",
         }]);
+        setFailedMessageId(errorMessageId);
+        setLastFailedUserMessage(messageContent);
         setIsTyping(false);
       }
     } catch (error) {
       console.error('Chat error:', error);
+      const errorMessageId = personaMessageId;
       setMessages((prev) => [...prev, {
-        id: personaMessageId,
+        id: errorMessageId,
         role: 'persona',
-        content: "I'm having trouble connecting right now. Please try again in a moment.",
+        content: "I'm having trouble connecting right now.",
       }]);
+      setFailedMessageId(errorMessageId);
+      setLastFailedUserMessage(messageContent);
       setIsTyping(false);
+    }
+  };
+
+  const handleSend = async () => {
+    await sendMessage(input);
+  };
+
+  const handleRetry = async () => {
+    if (lastFailedUserMessage) {
+      await sendMessage(lastFailedUserMessage, true);
     }
   };
 
@@ -265,7 +310,36 @@ export function PersonaChat({ persona }: PersonaChatProps) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+      >
+        {/* Empty State - shown when only initial greeting exists */}
+        {messages.length === 1 && !isTyping && (
+          <div className="flex flex-col items-center justify-center py-8 text-center animate-fade-in">
+            <div className="relative mb-4">
+              <div className="h-20 w-20 rounded-full overflow-hidden ring-4 ring-gray-100 dark:ring-gray-700 shadow-lg">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getPersonaImage(persona)}
+                  alt={persona.name}
+                  className="h-full w-full object-cover"
+                  style={{ objectPosition: getPersonaImagePosition(persona) }}
+                />
+              </div>
+              <div className={`absolute -bottom-1 -right-1 p-1.5 rounded-full ${colors.badge} shadow-md`}>
+                <MessageCircle className="h-4 w-4 text-white" />
+              </div>
+            </div>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">
+              Chat with {persona.name}
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-[250px]">
+              Ask about their work style, communication preferences, or what motivates them.
+            </p>
+          </div>
+        )}
+
         {messages.map((message) => (
           <div
             key={message.id}
@@ -293,17 +367,30 @@ export function PersonaChat({ persona }: PersonaChatProps) {
             </div>
 
             {/* Message bubble */}
-            <div
-              className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
-                message.role === 'user'
-                  ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-md'
-                  : `${colors.bg} ${colors.text} rounded-bl-md border border-gray-100 dark:border-gray-700`
-              }`}
-            >
-              {message.role === 'persona' && (
-                <p className="text-xs font-semibold opacity-80 mb-1">{persona.name}</p>
+            <div className="flex flex-col gap-1">
+              <div
+                className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
+                  message.role === 'user'
+                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-md'
+                    : `${colors.bg} ${colors.text} rounded-bl-md border border-gray-100 dark:border-gray-700`
+                } ${message.id === failedMessageId ? 'border-red-300 dark:border-red-700' : ''}`}
+              >
+                {message.role === 'persona' && (
+                  <p className="text-xs font-semibold opacity-80 mb-1">{persona.name}</p>
+                )}
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+              </div>
+              
+              {/* Retry button for failed messages */}
+              {message.id === failedMessageId && (
+                <button
+                  onClick={handleRetry}
+                  className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 transition-colors self-start ml-1"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  <span>Retry</span>
+                </button>
               )}
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
             </div>
           </div>
         ))}
