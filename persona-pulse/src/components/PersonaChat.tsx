@@ -284,7 +284,12 @@ export function PersonaChat({ persona }: PersonaChatProps) {
             </>
           ) : (
             <>
-              {getStatusIcon()}
+              <div className={`relative ${aiProvider !== 'mock' ? 'animate-pulse' : ''}`}>
+                <div className={`absolute inset-0 rounded-full ${aiProvider === 'gemini' ? 'bg-blue-400' : aiProvider === 'ollama' ? 'bg-green-400' : ''} opacity-40 blur-sm`} />
+                <div className="relative">
+                  {getStatusIcon()}
+                </div>
+              </div>
               <span className={getStatusColor()}>{providerName}</span>
             </>
           )}
@@ -432,7 +437,11 @@ export function PersonaChat({ persona }: PersonaChatProps) {
                 onClick={() => {
                   setInput(suggestion);
                 }}
-                className={`text-xs px-3 py-1.5 rounded-full border transition-all hover:scale-105 ${colors.bg} ${colors.text} hover:shadow-sm`}
+                onDoubleClick={() => {
+                  sendMessage(suggestion);
+                }}
+                title="Click to fill, double-click to send"
+                className={`text-xs px-3 py-1.5 rounded-full border transition-all hover:scale-105 active:scale-95 ${colors.bg} ${colors.text} hover:shadow-sm cursor-pointer select-none`}
               >
                 {suggestion}
               </button>
