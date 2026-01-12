@@ -424,48 +424,49 @@ export function PersonaChat({ persona }: PersonaChatProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Suggestions - shown throughout conversation */}
-      {!isTyping && (
-        <div className="flex-shrink-0 px-4 py-2 border-t bg-gray-50 dark:bg-gray-800/50">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-            {messages.length <= 1 ? 'Quick questions:' : 'Follow up:'}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {getContextualSuggestions(persona, messages).map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  setInput(suggestion);
-                }}
-                onDoubleClick={() => {
-                  sendMessage(suggestion);
-                }}
-                title="Click to fill, double-click to send"
-                className={`text-xs px-3 py-1.5 rounded-full border transition-all hover:scale-105 active:scale-95 ${colors.bg} ${colors.text} hover:shadow-sm cursor-pointer select-none`}
-              >
-                {suggestion}
-              </button>
-            ))}
+      {/* Quick Suggestions + Input - grouped together */}
+      <div className="flex-shrink-0 border-t bg-gray-50 dark:bg-gray-900/50 px-5 pt-3 pb-5">
+        {/* Suggestions */}
+        {!isTyping && (
+          <div className="mb-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              {messages.length <= 1 ? 'Quick questions:' : 'Follow up:'}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {getContextualSuggestions(persona, messages).map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setInput(suggestion);
+                  }}
+                  onDoubleClick={() => {
+                    sendMessage(suggestion);
+                  }}
+                  title="Click to fill, double-click to send"
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-all hover:scale-105 active:scale-95 ${colors.bg} ${colors.text} hover:shadow-sm cursor-pointer select-none`}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Input */}
-      <div className="flex-shrink-0 border-t p-5 pb-6">
+        {/* Input */}
         <div className="flex gap-3 items-end">
           <Textarea
             placeholder={`Message ${persona.name}...`}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="min-h-[64px] max-h-[140px] resize-none text-base py-3"
+            className="min-h-[72px] max-h-[150px] resize-none text-base py-3 px-4"
             rows={2}
           />
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isTyping}
             size="icon"
-            className={`${colors.badge} h-[64px] w-[64px] rounded-xl`}
+            className={`${colors.badge} h-[72px] w-[72px] rounded-xl`}
           >
             {isTyping ? (
               <Loader2 className="h-6 w-6 animate-spin" />
