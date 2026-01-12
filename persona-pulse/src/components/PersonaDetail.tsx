@@ -113,13 +113,13 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
           onValueChange={(v) => setActiveTab(v as 'profile' | 'chat')}
           className="flex-1 flex flex-col min-h-0 px-4"
         >
-          <TabsList className="grid w-full grid-cols-2 flex-shrink-0 mt-3">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
+          <TabsList className="grid w-full grid-cols-2 flex-shrink-0 mt-2 h-9">
+            <TabsTrigger value="profile" className="flex items-center gap-1.5 text-xs py-1.5">
+              <User className="h-3.5 w-3.5" />
               Profile
             </TabsTrigger>
-            <TabsTrigger value="chat" className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4" />
+            <TabsTrigger value="chat" className="flex items-center gap-1.5 text-xs py-1.5">
+              <MessageCircle className="h-3.5 w-3.5" />
               Chat with {persona.name}
             </TabsTrigger>
           </TabsList>

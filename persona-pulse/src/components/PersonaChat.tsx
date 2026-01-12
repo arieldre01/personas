@@ -321,9 +321,9 @@ export function PersonaChat({ persona }: PersonaChatProps) {
       >
         {/* Empty State - shown when only initial greeting exists */}
         {messages.length === 1 && !isTyping && (
-          <div className="flex flex-col items-center justify-center py-8 text-center animate-fade-in">
-            <div className="relative mb-4">
-              <div className="h-20 w-20 rounded-full overflow-hidden ring-4 ring-gray-100 dark:ring-gray-700 shadow-lg">
+          <div className="flex flex-col items-center justify-center py-4 text-center animate-fade-in">
+            <div className="relative mb-2">
+              <div className="h-14 w-14 rounded-full overflow-hidden ring-2 ring-gray-100 dark:ring-gray-700 shadow-md">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={getPersonaImage(persona)}
@@ -332,15 +332,15 @@ export function PersonaChat({ persona }: PersonaChatProps) {
                   style={{ objectPosition: getPersonaImagePosition(persona) }}
                 />
               </div>
-              <div className={`absolute -bottom-1 -right-1 p-1.5 rounded-full ${colors.badge} shadow-md`}>
-                <MessageCircle className="h-4 w-4 text-white" />
+              <div className={`absolute -bottom-0.5 -right-0.5 p-1 rounded-full ${colors.badge} shadow-sm`}>
+                <MessageCircle className="h-3 w-3 text-white" />
               </div>
             </div>
-            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">
+            <h3 className="font-medium text-sm text-gray-800 dark:text-gray-200 mb-0.5">
               Chat with {persona.name}
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-[250px]">
-              Ask about their work style, communication preferences, or what motivates them.
+            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-[220px]">
+              Ask about their work style, preferences, or communication tips.
             </p>
           </div>
         )}
