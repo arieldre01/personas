@@ -453,25 +453,25 @@ export function PersonaChat({ persona }: PersonaChatProps) {
         )}
 
         {/* Input */}
-        <div className="flex gap-3 items-end">
+        <div className="flex gap-2 items-end">
           <Textarea
             placeholder={`Message ${persona.name}...`}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="min-h-[72px] max-h-[150px] resize-none text-base py-3 px-4"
-            rows={2}
+            className="min-h-[48px] max-h-[120px] resize-none text-sm py-2.5 px-3"
+            rows={1}
           />
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isTyping}
             size="icon"
-            className={`${colors.badge} h-[72px] w-[72px] rounded-xl`}
+            className={`${colors.badge} h-[48px] w-[48px] rounded-lg`}
           >
             {isTyping ? (
-              <Loader2 className="h-6 w-6 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <Send className="h-6 w-6" />
+              <Send className="h-5 w-5" />
             )}
           </Button>
         </div>
