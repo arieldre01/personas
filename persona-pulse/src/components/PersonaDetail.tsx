@@ -11,12 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Persona, generationColors, getPersonaImage, getPersonaImagePosition } from '@/lib/personas';
 import { PersonaChat } from './PersonaChat';
-import { Breadcrumbs } from './Breadcrumbs';
 import {
-  MapPin,
-  Briefcase,
-  Clock,
-  Calendar,
   Quote,
   Brain,
   Zap,
@@ -59,88 +54,66 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="h-[85vh] max-h-[850px] max-w-3xl overflow-hidden flex flex-col">
-        {/* Breadcrumbs */}
-        <Breadcrumbs
-          items={[
-            { label: 'Home', onClick: onClose },
-            { label: 'Explore Personas', onClick: onClose },
-            { label: persona.name },
-          ]}
-          persona={persona}
-        />
+      <DialogContent className="h-[90vh] max-h-[900px] max-w-3xl overflow-hidden flex flex-col p-0">
+        {/* Compact Header */}
+        <div className={`flex-shrink-0 ${colors.bg} px-4 py-3 relative`}>
+          {/* Close Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="absolute top-2 right-2 h-7 w-7 rounded-full bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 shadow-sm backdrop-blur-sm transition-all hover:scale-105 z-10"
+            aria-label="Close dialog"
+          >
+            <X className="h-4 w-4" />
+          </Button>
 
-        <DialogHeader className="flex-shrink-0">
-          {/* Profile Header */}
-          <div className={`-mx-6 -mt-6 mb-4 ${colors.bg} p-6 relative`}>
-            {/* Close Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 shadow-sm backdrop-blur-sm transition-all hover:scale-105"
-              aria-label="Close dialog"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-3">
+            {/* Avatar */}
+            <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-white dark:ring-gray-800 shadow-md">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getPersonaImage(persona)}
+                alt={persona.name}
+                className="h-full w-full object-cover"
+                style={{ objectPosition: getPersonaImagePosition(persona) }}
+              />
+            </div>
 
-            <div className="flex items-start gap-6">
-              {/* Avatar */}
-              <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-full ring-4 ring-white dark:ring-gray-800 shadow-lg">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getPersonaImage(persona)}
-                  alt={persona.name}
-                  className="h-full w-full object-cover"
-                  style={{ objectPosition: getPersonaImagePosition(persona) }}
-                />
-              </div>
-
-              {/* Info */}
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <DialogTitle className="text-2xl font-bold">
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <DialogHeader className="p-0">
+                  <DialogTitle className="text-lg font-bold truncate">
                     {persona.name}
                   </DialogTitle>
-                  <Badge className={`${colors.badge} text-white`}>
-                    {persona.generation}
-                  </Badge>
-                </div>
-                <p className={`mt-1 text-lg font-medium ${colors.text}`}>
-                  {persona.title}
-                </p>
-
-                {/* Quick Stats */}
-                <div className="mt-2 flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-400">
-                  <div className="flex items-center gap-1">
-                    <Briefcase className="h-3 w-3" />
-                    <span className="text-xs">{persona.role}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    <span className="text-xs">{persona.location}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    <span className="text-xs">Age {persona.age}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span className="text-xs">{persona.tenure}</span>
-                  </div>
-                </div>
+                </DialogHeader>
+                <Badge className={`${colors.badge} text-white text-xs px-2 py-0`}>
+                  {persona.generation}
+                </Badge>
+              </div>
+              <p className={`text-sm font-medium ${colors.text} truncate`}>
+                {persona.title}
+              </p>
+              {/* Quick Stats - single line */}
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                <span>{persona.role}</span>
+                <span>•</span>
+                <span>{persona.location}</span>
+                <span>•</span>
+                <span>Age {persona.age}</span>
               </div>
             </div>
           </div>
-        </DialogHeader>
+        </div>
 
         {/* Tabs */}
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v as 'profile' | 'chat')}
-          className="flex-1 flex flex-col min-h-0"
+          className="flex-1 flex flex-col min-h-0 px-4"
         >
-          <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+          <TabsList className="grid w-full grid-cols-2 flex-shrink-0 mt-3">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -152,7 +125,7 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
           </TabsList>
 
           {/* Profile Tab */}
-          <TabsContent value="profile" className="flex-1 overflow-y-auto mt-4 pr-2">
+          <TabsContent value="profile" className="flex-1 overflow-y-auto mt-3 pr-2">
             {/* Quote */}
             <div className="mb-6 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4">
               <div className="flex gap-3">
@@ -258,7 +231,7 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
           </TabsContent>
 
           {/* Chat Tab */}
-          <TabsContent value="chat" className="flex-1 min-h-0 mt-0 flex flex-col">
+          <TabsContent value="chat" className="flex-1 min-h-0 mt-2 flex flex-col overflow-hidden">
             <PersonaChat persona={persona} />
           </TabsContent>
         </Tabs>
