@@ -59,7 +59,7 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden flex flex-col">
+      <DialogContent className="h-[85vh] max-h-[850px] max-w-3xl overflow-hidden flex flex-col">
         {/* Breadcrumbs */}
         <Breadcrumbs
           items={[
