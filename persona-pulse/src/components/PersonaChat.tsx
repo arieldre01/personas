@@ -273,9 +273,9 @@ export function PersonaChat({ persona }: PersonaChatProps) {
   };
 
   return (
-    <div className="flex flex-col h-[350px]">
+    <div className="flex flex-col h-full min-h-[300px]">
       {/* Status indicator */}
-      <div className="flex items-center justify-between px-4 py-2 border-b text-xs">
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b text-xs">
         <div className="flex items-center gap-2">
           {providerStatus === 'checking' ? (
             <>
@@ -426,7 +426,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
 
       {/* Quick Suggestions - shown throughout conversation */}
       {!isTyping && (
-        <div className="px-4 py-2 border-t bg-gray-50 dark:bg-gray-800/50">
+        <div className="flex-shrink-0 px-4 py-2 border-t bg-gray-50 dark:bg-gray-800/50">
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
             {messages.length <= 1 ? 'Quick questions:' : 'Follow up:'}
           </p>
@@ -451,7 +451,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
       )}
 
       {/* Input */}
-      <div className="border-t p-4">
+      <div className="flex-shrink-0 border-t p-4">
         <div className="flex gap-2">
           <Textarea
             placeholder={`Message ${persona.name}...`}
