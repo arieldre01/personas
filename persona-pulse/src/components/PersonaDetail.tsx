@@ -10,7 +10,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Persona, generationColors, getPersonaImage, getPersonaImagePosition } from '@/lib/personas';
+import { Scenario, getScenarioCountForPersona } from '@/lib/scenarios';
 import { PersonaChat } from './PersonaChat';
+import { ScenarioList } from './ScenarioList';
+import { ScenarioChat } from './ScenarioChat';
 import {
   Quote,
   Brain,
@@ -22,6 +25,7 @@ import {
   User,
   MessageCircle,
   X,
+  Theater,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -32,9 +36,9 @@ interface PersonaDetailProps {
 }
 
 export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
-  const [activeTab, setActiveTab] = useState<'profile' | 'chat'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'chat' | 'scenarios'>('profile');
+  const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
 
-  // Handle Escape key to close modal
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       onClose();
@@ -55,9 +59,7 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="h-[90vh] max-h-[900px] max-w-3xl overflow-hidden flex flex-col p-0">
-        {/* Compact Header */}
         <div className={`flex-shrink-0 ${colors.bg} px-4 py-3 relative`}>
-          {/* Close Button */}
           <Button
             variant="ghost"
             size="icon"
@@ -69,7 +71,6 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
           </Button>
 
           <div className="flex items-center gap-3">
-            {/* Avatar */}
             <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-white dark:ring-gray-800 shadow-md">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -80,7 +81,6 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
               />
             </div>
 
-            {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <DialogHeader className="p-0">
@@ -95,7 +95,6 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
               <p className={`text-sm font-medium ${colors.text} truncate`}>
                 {persona.title}
               </p>
-              {/* Quick Stats - single line */}
               <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                 <span>{persona.role}</span>
                 <span>•</span>
@@ -107,26 +106,35 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
           </div>
         </div>
 
-        {/* Tabs */}
         <Tabs
           value={activeTab}
-          onValueChange={(v) => setActiveTab(v as 'profile' | 'chat')}
+          onValueChange={(v) => {
+            setActiveTab(v as 'profile' | 'chat' | 'scenarios');
+            if (v !== 'scenarios') {
+              setSelectedScenario(null);
+            }
+          }}
           className="flex-1 flex flex-col min-h-0 px-4"
         >
-          <TabsList className="grid w-full grid-cols-2 flex-shrink-0 mt-2 h-9">
+          <TabsList className="grid w-full grid-cols-3 flex-shrink-0 mt-2 h-9">
             <TabsTrigger value="profile" className="flex items-center gap-1.5 text-xs py-1.5">
               <User className="h-3.5 w-3.5" />
               Profile
             </TabsTrigger>
             <TabsTrigger value="chat" className="flex items-center gap-1.5 text-xs py-1.5">
               <MessageCircle className="h-3.5 w-3.5" />
-              Chat with {persona.name}
+              Chat
+            </TabsTrigger>
+            <TabsTrigger value="scenarios" className="flex items-center gap-1.5 text-xs py-1.5">
+              <Theater className="h-3.5 w-3.5" />
+              Scenarios
+              <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
+                {getScenarioCountForPersona(persona.id)}
+              </Badge>
             </TabsTrigger>
           </TabsList>
 
-          {/* Profile Tab */}
           <TabsContent value="profile" className="flex-1 overflow-y-auto mt-3 pr-2">
-            {/* Quote */}
             <div className="mb-6 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4">
               <div className="flex gap-3">
                 <Quote className={`h-6 w-6 flex-shrink-0 ${colors.text}`} />
@@ -136,7 +144,6 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
               </div>
             </div>
 
-            {/* Psychological Profile */}
             <div className="mb-6">
               <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                 <Brain className={`h-5 w-5 ${colors.text}`} />
@@ -144,7 +151,6 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
               </h3>
 
               <div className="space-y-4">
-                {/* Stress */}
                 <div className="rounded-lg border p-4">
                   <div className="mb-2 flex items-center gap-2 font-medium text-red-600 dark:text-red-400">
                     <AlertTriangle className="h-4 w-4" />
@@ -155,7 +161,6 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
                   </p>
                 </div>
 
-                {/* Motivation */}
                 <div className="rounded-lg border p-4">
                   <div className="mb-2 flex items-center gap-2 font-medium text-green-600 dark:text-green-400">
                     <Zap className="h-4 w-4" />
@@ -166,7 +171,6 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
                   </p>
                 </div>
 
-                {/* Pain Points */}
                 <div className="rounded-lg border p-4">
                   <div className="mb-2 flex items-center gap-2 font-medium text-amber-600 dark:text-amber-400">
                     <AlertTriangle className="h-4 w-4" />
@@ -181,7 +185,6 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
               </div>
             </div>
 
-            {/* Communication Protocol */}
             <div>
               <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                 <MessageSquare className={`h-5 w-5 ${colors.text}`} />
@@ -189,7 +192,6 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
               </h3>
 
               <div className="grid gap-4 md:grid-cols-2">
-                {/* Do's */}
                 <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30 p-4">
                   <div className="mb-3 flex items-center gap-2 font-medium text-green-700 dark:text-green-300">
                     <CheckCircle2 className="h-5 w-5" />
@@ -197,10 +199,7 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
                   </div>
                   <ul className="space-y-2">
                     {persona.communication.do.map((item, i) => (
-                      <li
-                        key={i}
-                        className="flex items-start gap-2 text-sm text-green-800 dark:text-green-200"
-                      >
+                      <li key={i} className="flex items-start gap-2 text-sm text-green-800 dark:text-green-200">
                         <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0" />
                         <span>{item}</span>
                       </li>
@@ -208,7 +207,6 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
                   </ul>
                 </div>
 
-                {/* Don'ts */}
                 <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30 p-4">
                   <div className="mb-3 flex items-center gap-2 font-medium text-red-700 dark:text-red-300">
                     <XCircle className="h-5 w-5" />
@@ -216,10 +214,7 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
                   </div>
                   <ul className="space-y-2">
                     {persona.communication.dont.map((item, i) => (
-                      <li
-                        key={i}
-                        className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"
-                      >
+                      <li key={i} className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200">
                         <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                         <span>{item}</span>
                       </li>
@@ -230,9 +225,23 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
             </div>
           </TabsContent>
 
-          {/* Chat Tab */}
           <TabsContent value="chat" className="flex-1 min-h-0 mt-2 flex flex-col overflow-hidden">
             <PersonaChat persona={persona} />
+          </TabsContent>
+
+          <TabsContent value="scenarios" className="flex-1 min-h-0 mt-2 flex flex-col overflow-hidden">
+            {selectedScenario ? (
+              <ScenarioChat
+                scenario={selectedScenario}
+                persona={persona}
+                onBack={() => setSelectedScenario(null)}
+              />
+            ) : (
+              <ScenarioList
+                persona={persona}
+                onSelectScenario={(scenario) => setSelectedScenario(scenario)}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </DialogContent>
