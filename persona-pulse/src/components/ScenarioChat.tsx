@@ -52,11 +52,17 @@ export function ScenarioChat({ scenario, persona, onBack }: ScenarioChatProps) {
       setIsTyping(true);
       
       try {
+        // Build a detailed opening prompt for the AI
+        const openingPrompt = `The scenario "${scenario.title}" is starting now. 
+The user is playing the role of: ${scenario.userRole}.
+Begin the conversation with your opening line - speak first as if you're initiating this workplace interaction.
+Stay fully in character as ${persona.name} and respond naturally to this scenario situation.`;
+
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: 'Start the scenario. Say your opening line in character.',
+            message: openingPrompt,
             personaId: persona.id,
             scenarioContext: scenario.context,
             stream: true,

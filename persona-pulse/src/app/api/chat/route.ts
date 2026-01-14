@@ -34,9 +34,22 @@ export async function POST(request: NextRequest) {
       const extendedKnowledge = loadPersonaKnowledge(personaId);
       systemInstruction = buildPersonaSystemInstruction(persona, extendedKnowledge);
       
-      // Add scenario context if provided
+      // Add scenario context if provided - this enhances role-play mode
       if (scenarioContext) {
-        systemInstruction += `\n\nSCENARIO CONTEXT:\n${scenarioContext}\n\nStay in character for this scenario. Respond naturally as if this situation is happening right now.`;
+        systemInstruction += `
+
+=== ACTIVE ROLE-PLAY SCENARIO ===
+${scenarioContext}
+
+SCENARIO RULES (CRITICAL):
+1. You are IN this scenario right now. This is happening live.
+2. Respond as ${persona.name} would respond in THIS specific situation.
+3. Use your defined psychology and communication style from above.
+4. React authentically to what the user says - show emotions, concerns, or enthusiasm as appropriate.
+5. Reference specific details from the scenario context when relevant.
+6. Stay in the moment - don't break character or acknowledge this is a training exercise.
+7. Keep responses natural and conversational (2-4 sentences typically).
+=== END SCENARIO ===`;
       }
     }
 
