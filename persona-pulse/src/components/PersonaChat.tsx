@@ -5,14 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Persona, generationColors } from '@/lib/personas';
 import { getFullPersonaContext } from '@/lib/persona-prompts';
-import { Send, Loader2, Wifi, WifiOff, Trash2, Sparkles, RefreshCw, MessageCircle } from 'lucide-react';
+import { Send, Loader2, Wifi, WifiOff, Trash2, Sparkles, RefreshCw, MessageCircle, Zap } from 'lucide-react';
 import { getPersonaImage, getPersonaImagePosition } from '@/lib/personas';
 import { saveChat, loadChat, clearChat } from '@/lib/chat-storage';
+import { analyzeMessage, FeedbackResult } from '@/lib/style-analyzer';
+import { FeedbackBadge } from './FeedbackBadge';
 
 interface Message {
   id: string;
   role: 'user' | 'persona';
   content: string;
+  feedback?: FeedbackResult;
 }
 
 interface PersonaChatProps {
@@ -37,6 +40,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
   const [providerName, setProviderName] = useState('Checking...');
   const [failedMessageId, setFailedMessageId] = useState<string | null>(null);
   const [lastFailedUserMessage, setLastFailedUserMessage] = useState<string | null>(null);
+  const [instantFeedback, setInstantFeedback] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const colors = generationColors[persona.generation];
@@ -123,10 +127,16 @@ export function PersonaChat({ persona }: PersonaChatProps) {
     setFailedMessageId(null);
     setLastFailedUserMessage(null);
 
+    // Analyze message for instant feedback if enabled
+    const messageFeedback = instantFeedback 
+      ? analyzeMessage(messageContent.trim(), persona)
+      : undefined;
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: messageContent.trim(),
+      feedback: messageFeedback,
     };
 
     if (!isRetry) {
@@ -294,7 +304,24 @@ export function PersonaChat({ persona }: PersonaChatProps) {
             </>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {/* Instant Feedback Toggle */}
+          <button
+            onClick={() => setInstantFeedback(!instantFeedback)}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium transition-all ${
+              instantFeedback 
+                ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 ring-1 ring-green-300 dark:ring-green-700' 
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+            }`}
+            title="Toggle instant feedback on your messages"
+          >
+            <Zap className={`h-3 w-3 ${instantFeedback ? 'text-green-500' : ''}`} />
+            <span>Instant Feedback</span>
+            <span className={`text-[9px] px-1 rounded ${instantFeedback ? 'bg-green-200 dark:bg-green-800' : 'bg-gray-200 dark:bg-gray-700'}`}>
+              {instantFeedback ? 'ON' : 'OFF'}
+            </span>
+          </button>
+          
           <button
             onClick={checkAIStatus}
             className="text-blue-500 hover:underline"
@@ -372,7 +399,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
             </div>
 
             {/* Message bubble */}
-            <div className="flex flex-col gap-1">
+            <div className={`flex flex-col gap-1 ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
               <div
                 className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
                   message.role === 'user'
@@ -385,6 +412,11 @@ export function PersonaChat({ persona }: PersonaChatProps) {
                 )}
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
               </div>
+              
+              {/* Instant Feedback Badge for user messages */}
+              {message.role === 'user' && message.feedback && (
+                <FeedbackBadge feedback={message.feedback} className="mt-1" />
+              )}
               
               {/* Retry button for failed messages */}
               {message.id === failedMessageId && (
