@@ -23,10 +23,9 @@ export function ScenarioFeedbackModal({
   onTryAgain,
   onPickNew,
   feedback,
-  scenario,
   persona,
   isLoading = false,
-}: ScenarioFeedbackProps) {
+}: Omit<ScenarioFeedbackProps, 'scenario'> & { scenario?: Scenario }) {
   const colors = generationColors[persona.generation];
 
   return (
