@@ -10,7 +10,13 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, personaContext, personaId, stream = true } = await request.json();
+    const { 
+      message, 
+      personaContext, 
+      personaId, 
+      stream = true,
+      scenarioContext,
+    } = await request.json();
 
     if (!message) {
       return new Response(
@@ -27,6 +33,11 @@ export async function POST(request: NextRequest) {
       // Load extended knowledge if available
       const extendedKnowledge = loadPersonaKnowledge(personaId);
       systemInstruction = buildPersonaSystemInstruction(persona, extendedKnowledge);
+      
+      // Add scenario context if provided
+      if (scenarioContext) {
+        systemInstruction += `\n\nSCENARIO CONTEXT:\n${scenarioContext}\n\nStay in character for this scenario. Respond naturally as if this situation is happening right now.`;
+      }
     }
 
     // Extract conversation history from personaContext if it contains previous messages
