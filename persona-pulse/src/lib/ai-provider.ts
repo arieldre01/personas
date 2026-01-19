@@ -2,22 +2,26 @@
  * Unified AI Provider with Cascading Fallbacks
  * 
  * Priority:
- * 1. Google Gemini (if GEMINI_API_KEY is set)
- * 2. Ollama (local, if running)
- * 3. Mock responses (always available)
+ * 1. Groq (if GROQ_API_KEY is set) - fastest!
+ * 2. Google Gemini (if GEMINI_API_KEY is set)
+ * 3. Ollama (local, if running)
+ * 4. Mock responses (always available)
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Persona } from './personas';
 
 // Configuration
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const OLLAMA_API_URL = process.env.OLLAMA_URL || 'http://localhost:11434/api/generate';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'phi3:mini';
 const GEMINI_MODEL = 'gemini-2.0-flash';
 
 // Provider types
-export type AIProvider = 'gemini' | 'ollama' | 'mock';
+export type AIProvider = 'groq' | 'gemini' | 'ollama' | 'mock';
 
 export interface AIResponse {
   text: string;
@@ -82,10 +86,17 @@ YOU ARE A REAL PERSON, NOT AN AI ASSISTANT. THIS IS CRITICAL:
 }
 
 /**
+ * Check if Groq is available
+ */
+export function isGroqAvailable(): boolean {
+  return Boolean(GROQ_API_KEY && !GROQ_API_KEY.includes('PASTE') && GROQ_API_KEY.length > 20);
+}
+
+/**
  * Check if Gemini is available (API key is set)
  */
 export function isGeminiAvailable(): boolean {
-  return Boolean(GEMINI_API_KEY && GEMINI_API_KEY !== 'your_api_key_here');
+  return Boolean(GEMINI_API_KEY && !GEMINI_API_KEY.includes('PASTE') && GEMINI_API_KEY.length > 20);
 }
 
 /**
@@ -105,6 +116,30 @@ export async function isOllamaAvailable(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Generate text using Groq
+ */
+async function generateWithGroq(
+  systemInstruction: string,
+  userMessage: string,
+  conversationHistory?: string
+): Promise<string> {
+  const messages: Array<{ role: string; content: string }> = [
+    { role: 'system', content: systemInstruction }
+  ];
+  if (conversationHistory) messages.push({ role: 'user', content: conversationHistory });
+  messages.push({ role: 'user', content: userMessage });
+
+  const response = await fetch(GROQ_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+    body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.7, max_tokens: 256 }),
+  });
+  if (!response.ok) throw new Error(`Groq error: ${response.status}`);
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content?.trim() || '';
 }
 
 /**
@@ -198,7 +233,17 @@ export async function generateText(
   userMessage: string,
   conversationHistory?: string
 ): Promise<AIResponse> {
-  // Try Gemini first
+  // Try Groq first (fastest!)
+  if (isGroqAvailable()) {
+    try {
+      const text = await generateWithGroq(systemInstruction, userMessage, conversationHistory);
+      return { text: cleanResponse(text), provider: 'groq' };
+    } catch (error) {
+      console.warn('Groq failed, falling back to Gemini:', error);
+    }
+  }
+
+  // Try Gemini second
   if (isGeminiAvailable()) {
     try {
       const text = await generateWithGemini(systemInstruction, userMessage, conversationHistory);
@@ -208,7 +253,7 @@ export async function generateText(
     }
   }
 
-  // Try Ollama second
+  // Try Ollama third
   if (await isOllamaAvailable()) {
     try {
       const text = await generateWithOllama(systemInstruction, userMessage, conversationHistory);
@@ -230,7 +275,44 @@ export async function generateTextStream(
   userMessage: string,
   conversationHistory?: string
 ): Promise<{ stream: ReadableStream; provider: AIProvider }> {
-  // Try Gemini streaming first
+  // Try Groq streaming first
+  if (isGroqAvailable()) {
+    try {
+      const messages: Array<{ role: string; content: string }> = [{ role: 'system', content: systemInstruction }];
+      if (conversationHistory) messages.push({ role: 'user', content: conversationHistory });
+      messages.push({ role: 'user', content: userMessage });
+      const groqRes = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+        body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.7, max_tokens: 256, stream: true }),
+      });
+      if (!groqRes.ok) throw new Error('Groq streaming failed');
+      const encoder = new TextEncoder();
+      let fullResponse = '';
+      const stream = new ReadableStream({
+        async start(controller) {
+          const reader = groqRes.body?.getReader();
+          if (!reader) { controller.close(); return; }
+          const decoder = new TextDecoder();
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              const chunk = decoder.decode(value, { stream: true });
+              for (const line of chunk.split('\n').filter(l => l.startsWith('data: '))) {
+                const data = line.slice(6).trim();
+                if (data === '[DONE]') { controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, fullResponse: cleanResponse(fullResponse) })}\n\n`)); continue; }
+                try { const j = JSON.parse(data); const t = j.choices?.[0]?.delta?.content; if (t) { fullResponse += t; controller.enqueue(encoder.encode(`data: ${JSON.stringify({ token: t })}\n\n`)); } } catch {}
+              }
+            }
+          } finally { controller.close(); }
+        },
+      });
+      return { stream, provider: 'groq' };
+    } catch (e) { console.warn('Groq stream failed:', e); }
+  }
+
+  // Try Gemini streaming second
   if (isGeminiAvailable()) {
     try {
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY!);
@@ -406,8 +488,12 @@ export async function getActiveProvider(): Promise<{
   name: string;
   status: 'active' | 'fallback' | 'mock';
 }> {
+  if (isGroqAvailable()) {
+    return { provider: 'groq', name: 'Groq (Fast)', status: 'active' };
+  }
+  
   if (isGeminiAvailable()) {
-    return { provider: 'gemini', name: 'Google Gemini', status: 'active' };
+    return { provider: 'gemini', name: 'Google Gemini', status: 'fallback' };
   }
   
   if (await isOllamaAvailable()) {
