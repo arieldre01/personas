@@ -560,4 +560,3 @@ export async function getActiveProvider(): Promise<{
   
   return { provider: 'mock', name: 'Mock (Offline)', status: 'mock' };
 }
-

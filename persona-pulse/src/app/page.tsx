@@ -7,10 +7,11 @@ import { PersonaGrid } from '@/components/PersonaGrid';
 import { PersonaDetail } from '@/components/PersonaDetail';
 import { PersonaFinder } from '@/components/PersonaFinder';
 import { PersonaBuilder } from '@/components/PersonaBuilder';
+import { MultiPersonaChat } from '@/components/MultiPersonaChat';
 import { personas, Persona, generationColors } from '@/lib/personas';
 import { amdocsPersonas } from '@/lib/amdocs-personas';
 import { getCustomPersonas, CustomPersona, deleteCustomPersona } from '@/lib/custom-personas';
-import { Compass, Users, Sparkles, Github, Plus, Building2, FlaskConical } from 'lucide-react';
+import { Compass, Users, Sparkles, Github, Plus, Building2, FlaskConical, MessageCircle } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 type PersonaSet = 'amdocs' | 'mock';
@@ -20,6 +21,7 @@ export default function Home() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [finderOpen, setFinderOpen] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
+  const [multiChatOpen, setMultiChatOpen] = useState(false);
   const [editingPersona, setEditingPersona] = useState<CustomPersona | null>(null);
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -162,6 +164,14 @@ export default function Home() {
               </button>
             </div>
 
+            <Button
+              onClick={() => setMultiChatOpen(true)}
+              variant="outline"
+              className="gap-2"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Group Chat
+            </Button>
             <Button
               onClick={handleCreatePersona}
               variant="outline"
@@ -306,6 +316,11 @@ export default function Home() {
         }}
         onSave={handlePersonaSaved}
         editPersona={editingPersona}
+      />
+
+      <MultiPersonaChat
+        open={multiChatOpen}
+        onClose={() => setMultiChatOpen(false)}
       />
     </div>
   );
