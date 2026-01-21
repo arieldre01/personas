@@ -255,38 +255,90 @@ export async function generateTextStream(
   // Try Groq streaming first
   if (isGroqAvailable()) {
     try {
-      const messages: Array<{ role: string; content: string }> = [{ role: 'system', content: systemInstruction }];
-      if (conversationHistory) messages.push({ role: 'user', content: conversationHistory });
+      const messages: Array<{ role: string; content: string }> = [
+        { role: 'system', content: systemInstruction }
+      ];
+      if (conversationHistory) {
+        messages.push({ role: 'user', content: conversationHistory });
+      }
       messages.push({ role: 'user', content: userMessage });
+
       const groqRes = await fetch(GROQ_API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
-        body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.7, max_tokens: 256, stream: true }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          messages,
+          temperature: 0.7,
+          max_tokens: 256,
+          stream: true
+        }),
       });
+
       if (!groqRes.ok) throw new Error('Groq streaming failed');
+
       const encoder = new TextEncoder();
       let fullResponse = '';
+      let streamEnded = false;
+
       const stream = new ReadableStream({
         async start(controller) {
           const reader = groqRes.body?.getReader();
-          if (!reader) { controller.close(); return; }
+          if (!reader) {
+            controller.close();
+            return;
+          }
+
           const decoder = new TextDecoder();
+
           try {
-            while (true) {
+            while (!streamEnded) {
               const { done, value } = await reader.read();
               if (done) break;
+
               const chunk = decoder.decode(value, { stream: true });
-              for (const line of chunk.split('\n').filter(l => l.startsWith('data: '))) {
+              const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
+
+              for (const line of lines) {
                 const data = line.slice(6).trim();
-                if (data === '[DONE]') { controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, fullResponse: cleanResponse(fullResponse) })}\n\n`)); continue; }
-                try { const j = JSON.parse(data); const t = j.choices?.[0]?.delta?.content; if (t) { fullResponse += t; controller.enqueue(encoder.encode(`data: ${JSON.stringify({ token: t })}\n\n`)); } } catch {}
+
+                // Stream finished
+                if (data === '[DONE]') {
+                  streamEnded = true;
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ done: true, fullResponse: cleanResponse(fullResponse) })}\n\n`)
+                  );
+                  break;
+                }
+
+                // Parse token
+                try {
+                  const json = JSON.parse(data);
+                  const token = json.choices?.[0]?.delta?.content;
+                  if (token) {
+                    fullResponse += token;
+                    controller.enqueue(
+                      encoder.encode(`data: ${JSON.stringify({ token })}\n\n`)
+                    );
+                  }
+                } catch {
+                  // Skip malformed JSON
+                }
               }
             }
-          } finally { controller.close(); }
+          } finally {
+            controller.close();
+          }
         },
       });
+
       return { stream, provider: 'groq' };
-    } catch (e) { console.warn('Groq stream failed:', e); }
+    } catch (e) {
+      console.warn('Groq stream failed:', e);
+    }
   }
 
   // Try Gemini streaming second
