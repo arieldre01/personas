@@ -9,6 +9,38 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ## [Unreleased]
 
+### 2025-01-21 - Amdocs Personas
+
+#### Added (Time: ~18:00 UTC)
+- **Amdocs Employee Personas** (`src/lib/amdocs-personas.ts`)
+  - 8 personas based on real employee research:
+    - Maya (Gen X) - Busy Bee Manager, Ra'anana, Israel
+    - Priya (Gen Z) - Digital Native, Pune, India
+    - Anna (Gen Y) - Acquired Talent, Dublin, Ireland
+    - Sahil (Gen Y) - Social Connector, Dallas, TX (Expat)
+    - Ido (Boomer) - Skeptical Veteran, Ra'anana, Israel
+    - Ben (Gen Y) - Career Climber, New Jersey, USA
+    - Alex (Gen X) - Business Executive, Plano, TX
+    - Oliver (Gen X) - Site Leader, UK
+
+- **Persona Set Toggle** (`src/app/page.tsx`)
+  - Toggle button in header to switch between Amdocs and Mock personas
+  - Amdocs button (Building2 icon) - shows real employee personas
+  - Mock button (FlaskConical icon) - shows fictional demo personas
+
+- **16 New Scenarios** (`src/lib/scenarios.ts`)
+  - 2 scenarios per Amdocs persona for role-play practice
+  - Scenarios based on real communication challenges
+
+- **Image Mapping** (`src/lib/personas.ts`)
+  - Amdocs personas mapped to local images (Maya_0.png, etc.)
+  - Mock personas use UI Avatars fallback
+
+#### Branch
+- `feature/amdocs-personas` - ready for review
+
+---
+
 ### 2025-01-21 - UI Polish Update
 
 #### Added (Time: ~15:30 UTC)
