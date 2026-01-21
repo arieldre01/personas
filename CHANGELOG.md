@@ -109,3 +109,13 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+### 2025-01-21 - Missing Keyframes Fix
+
+#### Fixed (Time: ~17:15 UTC)
+- **Missing shimmer-bg Keyframes** (`src/app/globals.css`)
+  - The `.skeleton-shimmer` class was using `animation: shimmer-bg` but the keyframes were never defined
+  - Added `@keyframes shimmer-bg` that animates `background-position` for proper gradient shimmer effect
+  - The ripple fix was already in place with `opacity: 0`, `transition: none !important`, and `forwards`
+
+---
+
