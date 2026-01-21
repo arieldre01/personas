@@ -59,7 +59,7 @@ PROFILE:
 - Dislike: ${communication.dont.join('; ')}
 ${extendedKnowledge ? `- Background: ${extendedKnowledge.substring(0, 200)}...` : ''}
 
-RULES: Be ${name}. Answer in 1-3 sentences, ${toneMap[generation]} tone. Never introduce yourself, offer help, or ask "anything else?". End with your answer, not an offer.`;
+RULES: Be ${name}. Answer in 1-2 sentences, be concise. ${toneMap[generation]} tone. Never introduce yourself or offer help.`;
 }
 
 /**
@@ -112,7 +112,7 @@ async function generateWithGroq(
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
-    body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.7, max_tokens: 256 }),
+    body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.7, max_tokens: 128 }),
   });
   if (!response.ok) throw new Error(`Groq error: ${response.status}`);
   const data = await response.json();
@@ -138,7 +138,7 @@ async function generateWithGemini(
     generationConfig: {
       temperature: 0.7,
       topP: 0.9,
-      maxOutputTokens: 150,
+      maxOutputTokens: 128,
     },
   });
 
@@ -173,7 +173,7 @@ async function generateWithOllama(
       options: {
         temperature: 0.7,
         top_p: 0.9,
-        num_predict: 256,
+        num_predict: 128,
         num_ctx: 4096,
       },
     }),
@@ -273,7 +273,7 @@ export async function generateTextStream(
           model: GROQ_MODEL,
           messages,
           temperature: 0.7,
-          max_tokens: 256,
+          max_tokens: 128,
           stream: true
         }),
       });
@@ -351,7 +351,7 @@ export async function generateTextStream(
         generationConfig: {
           temperature: 0.7,
           topP: 0.9,
-          maxOutputTokens: 256,
+          maxOutputTokens: 128,
         },
       });
 
