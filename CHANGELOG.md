@@ -82,3 +82,30 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+### 2025-01-21 - Test Suite Added
+
+#### Added (Time: ~17:00 UTC)
+- **Vitest Testing Framework**
+  - Installed: `vitest`, `@vitejs/plugin-react`, `jsdom`, `@testing-library/react`
+  - Added `vitest.config.ts` with path aliases
+  - Added `npm test` and `npm run test:run` scripts
+
+- **Style Analyzer Tests** (`src/lib/__tests__/style-analyzer.test.ts`)
+  - 34 comprehensive tests covering:
+    - Rude language detection (stupid, idiot, idiotic, dumb, useless, terrible, garbage)
+    - Disrespectful language (shut up, who cares, whatever)
+    - Aggressive language (you're wrong, makes no sense, are you serious)
+    - Condescending language (well actually, you don't understand, it's obvious)
+    - Passive-aggressive phrases (as I mentioned, per my last)
+    - Demanding tone (ASAP, immediately)
+    - Vague language (maybe, kind of, sort of)
+    - Positive patterns (appreciation, data/metrics, asking perspective, bullet points)
+    - Neutral messages and edge cases
+    - Color utility function (`getFeedbackColors`)
+
+#### Fixed
+- Added "idiotic" and "moronic" to rude word detection
+- Made demanding pattern more specific ("right now", "do it now" instead of just "now")
+
+---
+

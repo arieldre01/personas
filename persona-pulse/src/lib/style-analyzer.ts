@@ -32,13 +32,13 @@ const NEGATIVE_PATTERNS = {
   isVague: /\b(maybe|perhaps|possibly|kind of|sort of|might|could be|not sure)\b/i,
   isTooLong: (msg: string) => msg.length > 500,
   hasFluff: /\b(just wanted to|I was wondering if|I thought maybe|if you don't mind)\b/i,
-  isDemanding: /\b(you must|you need to|immediately|ASAP|urgent|now)\b/i,
+  isDemanding: /\b(you must|you need to|immediately|ASAP|urgent|right now|do it now)\b/i,
   isPassiveAggressive: /\b(as I mentioned|per my last|already told you|obviously|clearly)\b/i,
   lacksStructure: (msg: string) => msg.length > 300 && !msg.includes('\n') && !/[-•*]/.test(msg),
-  isRude: /\b(stupid|idiot|dumb|moron|incompetent|useless|pathetic|terrible|awful|worst|hate|suck|sucks|crap|garbage|trash|ridiculous|absurd|nonsense)\b/i,
-  isDisrespectful: /\b(shut up|don't care|who cares|whatever|yeah right|are you kidding|seriously\?|what the|wtf|lol no)\b/i,
-  isAggressive: /\b(wrong|you're wrong|that's wrong|makes no sense|doesn't make sense|are you serious|how could you|why would you|what were you thinking)\b/i,
-  isCondescending: /\b(actually,|well actually|let me explain|you don't understand|you should know|it's obvious|anyone knows|basic knowledge)\b/i,
+  isRude: /\b(stupid|idiot|idiotic|dumb|moron|moronic|incompetent|useless|pathetic|terrible|awful|worst|hate|suck|sucks|crap|garbage|trash|ridiculous|absurd|nonsense)\b/i,
+  isDisrespectful: /\b(shut up|don't care|who cares|whatever|yeah right|are you kidding|what the|wtf|lol no)\b/i,
+  isAggressive: /\b(you're wrong|that's wrong|makes no sense|doesn't make sense|are you serious|how could you|why would you|what were you thinking)\b/i,
+  isCondescending: /\b(well actually|let me explain|you don't understand|you should know|it's obvious|anyone knows|basic knowledge)\b/i,
 };
 
 /**
