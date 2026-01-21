@@ -1,57 +1,63 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Moon, Sun, Monitor } from 'lucide-react';
+import { Monitor, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'system' | 'opposite';
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>('system');
   const [mounted, setMounted] = useState(false);
 
+  // Get what the system preference is
+  const getSystemPrefersDark = () => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  };
+
+  // Apply the correct theme based on mode
+  const applyTheme = (mode: Theme) => {
+    const systemDark = getSystemPrefersDark();
+    const shouldBeDark = mode === 'system' ? systemDark : !systemDark;
+    document.documentElement.classList.toggle('dark', shouldBeDark);
+  };
+
   // Avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
     const stored = localStorage.getItem('theme') as Theme | null;
-    if (stored) {
-      setTheme(stored);
+    if (stored === 'opposite') {
+      setTheme('opposite');
     }
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
 
-    const root = document.documentElement;
-    
     if (theme === 'system') {
       localStorage.removeItem('theme');
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      root.classList.toggle('dark', systemDark);
     } else {
       localStorage.setItem('theme', theme);
-      root.classList.toggle('dark', theme === 'dark');
     }
+    applyTheme(theme);
   }, [theme, mounted]);
 
-  // Listen for system theme changes when in system mode
+  // Listen for system theme changes
   useEffect(() => {
-    if (theme !== 'system') return;
+    if (!mounted) return;
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      document.documentElement.classList.toggle('dark', e.matches);
+    const handleChange = () => {
+      applyTheme(theme);
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+  }, [theme, mounted]);
 
-  const cycleTheme = () => {
-    const themes: Theme[] = ['light', 'dark', 'system'];
-    const currentIndex = themes.indexOf(theme);
-    const nextIndex = (currentIndex + 1) % themes.length;
-    setTheme(themes[nextIndex]);
+  const toggleTheme = () => {
+    setTheme(theme === 'system' ? 'opposite' : 'system');
   };
 
   if (!mounted) {
@@ -62,18 +68,25 @@ export function ThemeToggle() {
     );
   }
 
-  const Icon = theme === 'light' ? Sun : theme === 'dark' ? Moon : Monitor;
-  const label = theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'System';
+  const isOpposite = theme === 'opposite';
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={cycleTheme}
-      className="h-9 w-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 hover:scale-105 active:scale-95"
-      title={`Theme: ${label} (click to change)`}
+      onClick={toggleTheme}
+      className={`h-9 w-9 rounded-full transition-all duration-200 hover:scale-105 active:scale-95 ${
+        isOpposite 
+          ? 'bg-purple-100 dark:bg-purple-900/40 hover:bg-purple-200 dark:hover:bg-purple-800/40' 
+          : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+      }`}
+      title={isOpposite ? 'Theme: Opposite of system (click for System)' : 'Theme: System (click for Opposite)'}
     >
-      <Icon className="h-4 w-4 transition-transform duration-200" />
+      {isOpposite ? (
+        <RefreshCw className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+      ) : (
+        <Monitor className="h-4 w-4" />
+      )}
       <span className="sr-only">Toggle theme</span>
     </Button>
   );

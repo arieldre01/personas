@@ -19,10 +19,13 @@ export const metadata: Metadata = {
 };
 
 // Script to prevent flash of wrong theme on load
+// Supports 'system' (default) and 'opposite' modes
 const themeScript = `
   (function() {
-    const theme = localStorage.getItem('theme');
-    if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    var theme = localStorage.getItem('theme');
+    var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var shouldBeDark = theme === 'opposite' ? !systemDark : systemDark;
+    if (shouldBeDark) {
       document.documentElement.classList.add('dark');
     }
   })();
