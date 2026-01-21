@@ -68,3 +68,17 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+### 2025-01-21 - Instant Feedback Improvements
+
+#### Fixed (Time: ~16:30 UTC)
+- **Style Analyzer Not Detecting Rudeness** (`src/lib/style-analyzer.ts`)
+  - Fixed: Rude/insulting messages like "you say something stupid" were marked as "Clear communication"
+  - Added new negative patterns:
+    - `isRude`: Detects insults (stupid, idiot, dumb, useless, etc.)
+    - `isDisrespectful`: Detects dismissive phrases (shut up, who cares, whatever, etc.)
+    - `isAggressive`: Detects confrontational language (you're wrong, makes no sense, etc.)
+    - `isCondescending`: Detects condescending phrases (well actually, you don't understand, etc.)
+  - These patterns now trigger a warning in the instant feedback system
+
+---
+

@@ -35,6 +35,10 @@ const NEGATIVE_PATTERNS = {
   isDemanding: /\b(you must|you need to|immediately|ASAP|urgent|now)\b/i,
   isPassiveAggressive: /\b(as I mentioned|per my last|already told you|obviously|clearly)\b/i,
   lacksStructure: (msg: string) => msg.length > 300 && !msg.includes('\n') && !/[-•*]/.test(msg),
+  isRude: /\b(stupid|idiot|dumb|moron|incompetent|useless|pathetic|terrible|awful|worst|hate|suck|sucks|crap|garbage|trash|ridiculous|absurd|nonsense)\b/i,
+  isDisrespectful: /\b(shut up|don't care|who cares|whatever|yeah right|are you kidding|seriously\?|what the|wtf|lol no)\b/i,
+  isAggressive: /\b(wrong|you're wrong|that's wrong|makes no sense|doesn't make sense|are you serious|how could you|why would you|what were you thinking)\b/i,
+  isCondescending: /\b(actually,|well actually|let me explain|you don't understand|you should know|it's obvious|anyone knows|basic knowledge)\b/i,
 };
 
 /**
@@ -177,6 +181,26 @@ function checkDontMatches(message: string, persona: Persona): { matched: boolean
     if (assumptionDont) {
       return { matched: true, which: assumptionDont, reason: 'Avoid making assumptions' };
     }
+  }
+  
+  // Check for rude/insulting language
+  if (NEGATIVE_PATTERNS.isRude.test(message)) {
+    return { matched: true, reason: 'Language may come across as rude or insulting' };
+  }
+  
+  // Check for disrespectful phrases
+  if (NEGATIVE_PATTERNS.isDisrespectful.test(message)) {
+    return { matched: true, reason: 'Tone sounds dismissive or disrespectful' };
+  }
+  
+  // Check for aggressive questioning
+  if (NEGATIVE_PATTERNS.isAggressive.test(message)) {
+    return { matched: true, reason: 'Phrasing sounds confrontational' };
+  }
+  
+  // Check for condescending language
+  if (NEGATIVE_PATTERNS.isCondescending.test(message)) {
+    return { matched: true, reason: 'May come across as condescending' };
   }
   
   return { matched: false };
