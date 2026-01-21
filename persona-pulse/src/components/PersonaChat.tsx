@@ -185,10 +185,34 @@ export function PersonaChat({ persona }: PersonaChatProps) {
         }]);
         setIsTyping(false);
 
-        // Read the SSE stream
+        // Read the SSE stream with natural typing delay
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let streamedContent = '';
+        const tokenQueue: string[] = [];
+        let isProcessingQueue = false;
+        let displayedContent = '';
+
+        // Process tokens with a natural typing delay
+        const processTokenQueue = async () => {
+          if (isProcessingQueue) return;
+          isProcessingQueue = true;
+
+          while (tokenQueue.length > 0) {
+            const token = tokenQueue.shift()!;
+            displayedContent += token;
+            
+            setMessages((prev) => prev.map((msg) =>
+              msg.id === personaMessageId
+                ? { ...msg, content: displayedContent }
+                : msg
+            ));
+
+            // Natural typing delay: 20-40ms per token (feels like fast typing)
+            await new Promise(resolve => setTimeout(resolve, 25 + Math.random() * 15));
+          }
+
+          isProcessingQueue = false;
+        };
 
         while (true) {
           const { done, value } = await reader.read();
@@ -203,18 +227,18 @@ export function PersonaChat({ persona }: PersonaChatProps) {
               const data = JSON.parse(jsonStr);
               
               if (data.token) {
-                streamedContent += data.token;
-                // Update the message content in real-time
-                setMessages((prev) => prev.map((msg) =>
-                  msg.id === personaMessageId
-                    ? { ...msg, content: streamedContent }
-                    : msg
-                ));
+                tokenQueue.push(data.token);
+                processTokenQueue(); // Start processing if not already
               }
             } catch {
               // Skip malformed JSON
             }
           }
+        }
+
+        // Wait for remaining tokens to be displayed
+        while (tokenQueue.length > 0 || isProcessingQueue) {
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
       } else {
         // API failed - show error message with retry option

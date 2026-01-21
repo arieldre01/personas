@@ -75,11 +75,28 @@ Stay fully in character as ${persona.name} and respond naturally to this scenari
 
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
-          let content = '';
           const messageId = Date.now().toString();
+          const tokenQueue: string[] = [];
+          let isProcessingQueue = false;
+          let displayedContent = '';
 
           setMessages([{ id: messageId, role: 'persona', content: '' }]);
           setIsTyping(false);
+
+          // Process tokens with natural typing delay
+          const processTokenQueue = async () => {
+            if (isProcessingQueue) return;
+            isProcessingQueue = true;
+
+            while (tokenQueue.length > 0) {
+              const token = tokenQueue.shift()!;
+              displayedContent += token;
+              setMessages([{ id: messageId, role: 'persona', content: displayedContent }]);
+              await new Promise(resolve => setTimeout(resolve, 25 + Math.random() * 15));
+            }
+
+            isProcessingQueue = false;
+          };
 
           while (true) {
             const { done, value } = await reader.read();
@@ -92,11 +109,16 @@ Stay fully in character as ${persona.name} and respond naturally to this scenari
               try {
                 const data = JSON.parse(line.replace('data: ', ''));
                 if (data.token) {
-                  content += data.token;
-                  setMessages([{ id: messageId, role: 'persona', content }]);
+                  tokenQueue.push(data.token);
+                  processTokenQueue();
                 }
               } catch { /* skip */ }
             }
+          }
+
+          // Wait for remaining tokens
+          while (tokenQueue.length > 0 || isProcessingQueue) {
+            await new Promise(resolve => setTimeout(resolve, 50));
           }
         }
       } catch (error) {
@@ -146,7 +168,29 @@ Stay fully in character as ${persona.name} and respond naturally to this scenari
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let content = '';
+        const tokenQueue: string[] = [];
+        let isProcessingQueue = false;
+        let displayedContent = '';
+
+        // Process tokens with natural typing delay
+        const processTokenQueue = async () => {
+          if (isProcessingQueue) return;
+          isProcessingQueue = true;
+
+          while (tokenQueue.length > 0) {
+            const token = tokenQueue.shift()!;
+            displayedContent += token;
+            
+            setMessages((prev) => prev.map((msg) =>
+              msg.id === personaMessageId ? { ...msg, content: displayedContent } : msg
+            ));
+
+            // Natural typing delay
+            await new Promise(resolve => setTimeout(resolve, 25 + Math.random() * 15));
+          }
+
+          isProcessingQueue = false;
+        };
 
         while (true) {
           const { done, value } = await reader.read();
@@ -159,13 +203,16 @@ Stay fully in character as ${persona.name} and respond naturally to this scenari
             try {
               const data = JSON.parse(line.replace('data: ', ''));
               if (data.token) {
-                content += data.token;
-                setMessages((prev) => prev.map((msg) =>
-                  msg.id === personaMessageId ? { ...msg, content } : msg
-                ));
+                tokenQueue.push(data.token);
+                processTokenQueue();
               }
             } catch { /* skip */ }
           }
+        }
+
+        // Wait for remaining tokens
+        while (tokenQueue.length > 0 || isProcessingQueue) {
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
       }
     } catch (error) {
