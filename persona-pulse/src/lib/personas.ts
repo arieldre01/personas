@@ -310,7 +310,7 @@ export function getPersonaById(id: string): Persona | undefined {
 // Amdocs personas have local images
 const amdocsImageMap: Record<string, { src: string; position?: string }> = {
   maya: { src: '/images/personas/Maya_0.png', position: 'center top' },
-  priya: { src: '/images/personas/Priya_0.png', position: 'center top' },
+  priya: { src: '/images/personas/Priya_slide10_0.png', position: 'center top' },
   anna: { src: '/images/personas/Anna_0.png', position: 'center top' },
   sahil: { src: '/images/personas/Sahil_0.png', position: 'center top' },
   ido: { src: '/images/personas/Ido_0.png', position: 'center top' },
