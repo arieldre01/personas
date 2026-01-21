@@ -307,23 +307,31 @@ export function getPersonaById(id: string): Persona | undefined {
   return personas.find((p) => p.id === id);
 }
 
-// Mock personas use UI Avatars - no local images needed
-const personaImageMap: Record<string, { src: string; position?: string }> = {
-  // Empty - all personas will use UI Avatars fallback
+// Amdocs personas have local images
+const amdocsImageMap: Record<string, { src: string; position?: string }> = {
+  maya: { src: '/images/personas/Maya_0.png', position: 'center top' },
+  priya: { src: '/images/personas/Priya_0.png', position: 'center top' },
+  anna: { src: '/images/personas/Anna_0.png', position: 'center top' },
+  sahil: { src: '/images/personas/Sahil_0.png', position: 'center top' },
+  ido: { src: '/images/personas/Ido_0.png', position: 'center top' },
+  ben: { src: '/images/personas/Ben_0.png', position: 'center top' },
+  alex: { src: '/images/personas/Alex_0.png', position: 'center top' },
+  oliver: { src: '/images/personas/Oliver_0.png', position: 'center top' },
 };
 
 // Helper function to get image URL for a persona
 export function getPersonaImage(persona: Persona): string {
-  // Use local image if available, otherwise fall back to UI Avatars
-  const imageData = personaImageMap[persona.id];
+  // Check if persona has a local image (Amdocs personas)
+  const imageData = amdocsImageMap[persona.id];
   if (imageData?.src) {
     return imageData.src;
   }
+  // Fall back to UI Avatars for mock personas
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(persona.name)}&size=200&background=random&color=fff&bold=true`;
 }
 
 // Helper function to get image position for a persona (for object-position CSS)
 export function getPersonaImagePosition(persona: Persona): string {
-  const imageData = personaImageMap[persona.id];
+  const imageData = amdocsImageMap[persona.id];
   return imageData?.position || 'center';
 }

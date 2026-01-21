@@ -8,9 +8,12 @@ import { PersonaDetail } from '@/components/PersonaDetail';
 import { PersonaFinder } from '@/components/PersonaFinder';
 import { PersonaBuilder } from '@/components/PersonaBuilder';
 import { personas, Persona, generationColors } from '@/lib/personas';
+import { amdocsPersonas } from '@/lib/amdocs-personas';
 import { getCustomPersonas, CustomPersona, deleteCustomPersona } from '@/lib/custom-personas';
-import { Compass, Users, Sparkles, Github, Plus } from 'lucide-react';
+import { Compass, Users, Sparkles, Github, Plus, Building2, FlaskConical } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+
+type PersonaSet = 'amdocs' | 'mock';
 
 export default function Home() {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
@@ -20,14 +23,18 @@ export default function Home() {
   const [editingPersona, setEditingPersona] = useState<CustomPersona | null>(null);
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [personaSet, setPersonaSet] = useState<PersonaSet>('amdocs');
 
   // Load custom personas on mount
   useEffect(() => {
     setCustomPersonas(getCustomPersonas());
   }, []);
 
-  // Merge default and custom personas
-  const allPersonas = [...personas, ...customPersonas] as Persona[];
+  // Get the base personas based on selected set
+  const basePersonas = personaSet === 'amdocs' ? amdocsPersonas : personas;
+  
+  // Merge base and custom personas
+  const allPersonas = [...basePersonas, ...customPersonas] as Persona[];
 
   // Calculate grid columns based on screen size (matching the grid layout)
   const getColumnsCount = () => {
@@ -129,6 +136,32 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Persona Set Toggle */}
+            <div className="flex items-center rounded-full border bg-gray-100 dark:bg-gray-800 p-1">
+              <button
+                onClick={() => setPersonaSet('amdocs')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  personaSet === 'amdocs'
+                    ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <Building2 className="h-4 w-4" />
+                Amdocs
+              </button>
+              <button
+                onClick={() => setPersonaSet('mock')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  personaSet === 'mock'
+                    ? 'bg-white dark:bg-gray-700 text-teal-600 dark:text-teal-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <FlaskConical className="h-4 w-4" />
+                Mock
+              </button>
+            </div>
+
             <Button
               onClick={handleCreatePersona}
               variant="outline"
