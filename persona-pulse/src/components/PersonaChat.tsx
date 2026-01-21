@@ -148,19 +148,18 @@ export function PersonaChat({ persona }: PersonaChatProps) {
     const personaMessageId = (Date.now() + 1).toString();
 
     try {
-      // Build conversation history for context
+      // Build message array for token-efficient API call
       const currentMessages = isRetry ? messages : [...messages, userMessage];
-      const conversationHistory = currentMessages
+      const cleanMessages = currentMessages
         .filter(m => !m.content.includes("I'm having trouble connecting"))
-        .map((m) => `${m.role === 'user' ? 'User' : persona.name}: ${m.content}`)
-        .join('\n');
+        .map(m => ({ id: m.id, role: m.role, content: m.content }));
 
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `${conversationHistory}\nUser: ${messageContent}`,
-          personaContext,
+          message: messageContent, // Just the current message
+          messages: cleanMessages, // Structured array for sliding window
           personaId: persona.id,
           stream: true,
         }),

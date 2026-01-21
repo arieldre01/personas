@@ -122,15 +122,15 @@ Stay fully in character as ${persona.name} and respond naturally to this scenari
     const personaMessageId = (Date.now() + 1).toString();
 
     try {
-      const conversationHistory = [...messages, userMessage]
-        .map((m) => `${m.role === 'user' ? 'User' : persona.name}: ${m.content}`)
-        .join('\n');
+      // Build message array for token-efficient API call
+      const allMessages = [...messages, userMessage];
 
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `${conversationHistory}\nUser: ${userMessage.content}`,
+          message: userMessage.content, // Just the current message
+          messages: allMessages, // Structured array for sliding window
           personaId: persona.id,
           scenarioContext: scenario.context,
           stream: true,

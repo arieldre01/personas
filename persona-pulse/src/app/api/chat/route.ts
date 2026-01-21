@@ -7,6 +7,11 @@ import {
   buildPersonaSystemInstruction,
   getActiveProvider,
 } from '@/lib/ai-provider';
+import {
+  ChatMessage,
+  buildConversationWindow,
+  formatConversationContext,
+} from '@/lib/conversation-manager';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,6 +21,7 @@ export async function POST(request: NextRequest) {
       personaId, 
       stream = true,
       scenarioContext,
+      messages: messageHistory, // NEW: Structured message array for token efficiency
     } = await request.json();
 
     if (!message) {
@@ -25,7 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get persona data and build system instruction
+    // Get persona data and build system instruction (now optimized/compressed)
     const persona = personaId ? getPersonaById(personaId) : null;
     let systemInstruction = personaContext || '';
     
@@ -34,31 +40,25 @@ export async function POST(request: NextRequest) {
       const extendedKnowledge = loadPersonaKnowledge(personaId);
       systemInstruction = buildPersonaSystemInstruction(persona, extendedKnowledge);
       
-      // Add scenario context if provided - this enhances role-play mode
+      // Add scenario context if provided (compressed version)
       if (scenarioContext) {
-        systemInstruction += `
-
-=== ACTIVE ROLE-PLAY SCENARIO ===
-${scenarioContext}
-
-SCENARIO RULES (CRITICAL):
-1. You are IN this scenario right now. This is happening live.
-2. Respond as ${persona.name} would respond in THIS specific situation.
-3. Use your defined psychology and communication style from above.
-4. React authentically to what the user says - show emotions, concerns, or enthusiasm as appropriate.
-5. Reference specific details from the scenario context when relevant.
-6. Stay in the moment - don't break character or acknowledge this is a training exercise.
-7. Keep responses natural and conversational (2-4 sentences typically).
-=== END SCENARIO ===`;
+        systemInstruction += `\n\n[SCENARIO] ${scenarioContext}\nStay in character. React authentically. 2-4 sentences.`;
       }
     }
 
-    // Extract conversation history from personaContext if it contains previous messages
-    const conversationHistory = personaContext?.includes('User:') 
-      ? personaContext.split('\n\n').filter((line: string) => 
-          line.startsWith('User:') || line.startsWith('Assistant:')
-        ).join('\n')
-      : undefined;
+    // Build conversation history using sliding window for token efficiency
+    let conversationHistory: string | undefined;
+    
+    if (messageHistory && Array.isArray(messageHistory) && messageHistory.length > 0) {
+      // NEW: Use efficient windowed history
+      const window = buildConversationWindow(messageHistory as ChatMessage[]);
+      conversationHistory = formatConversationContext(window, persona?.name || 'Assistant');
+    } else if (personaContext?.includes('User:')) {
+      // LEGACY: Fall back to old format for backwards compatibility
+      conversationHistory = personaContext.split('\n\n').filter((line: string) => 
+        line.startsWith('User:') || line.startsWith('Assistant:')
+      ).join('\n');
+    }
 
     // Streaming response
     if (stream) {

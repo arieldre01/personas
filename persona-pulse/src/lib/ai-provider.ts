@@ -36,53 +36,30 @@ export interface StreamCallbacks {
 
 /**
  * Build a system instruction for persona chat based on persona data
+ * OPTIMIZED: Compressed from ~800 tokens to ~300 tokens for efficiency
  */
 export function buildPersonaSystemInstruction(persona: Persona, extendedKnowledge?: string): string {
-  const { name, title, role, generation, age, location, psychology, communication, quote } = persona;
+  const { name, role, generation, age, psychology, communication, quote } = persona;
   
-  return `You ARE ${name}, a ${age}-year-old ${role} based in ${location}. You are ${generation}.
+  // Get generation tone descriptor (compact)
+  const toneMap: Record<string, string> = {
+    'Gen Z': 'casual, direct',
+    'Gen Y': 'collaborative, purposeful',
+    'Gen X': 'practical, efficient',
+    'Boomer': 'experienced, thoughtful'
+  };
+  
+  return `You are ${name}, ${age}y/o ${role} (${generation}). "${quote}"
 
-YOUR PERSONALITY: "${title}"
-YOUR QUOTE: "${quote}"
+PROFILE:
+- Stress: ${psychology.stress}
+- Drive: ${psychology.motivation}
+- Issues: ${psychology.painPoints.join('; ')}
+- Prefer: ${communication.do.join('; ')}
+- Dislike: ${communication.dont.join('; ')}
+${extendedKnowledge ? `- Background: ${extendedKnowledge.substring(0, 200)}...` : ''}
 
-YOUR PSYCHOLOGY:
-- What stresses you: ${psychology.stress}
-- What motivates you: ${psychology.motivation}
-- Your frustrations: ${psychology.painPoints.join('; ')}
-
-HOW YOU COMMUNICATE:
-- You appreciate when people: ${communication.do.join('; ')}
-- You dislike when people: ${communication.dont.join('; ')}
-
-${extendedKnowledge ? `YOUR BACKGROUND:\n${extendedKnowledge}` : ''}
-
-CRITICAL RULES - FOLLOW EXACTLY:
-1. YOU ARE ${name}. Speak as yourself, not about yourself.
-2. ANSWER THE QUESTION DIRECTLY FIRST. Then add context if needed.
-3. Keep responses SHORT (1-3 sentences). Don't ramble.
-4. NEVER say "As ${title}..." or introduce yourself - the user knows who you are.
-5. NEVER use quotation marks around your response.
-6. Speak in YOUR voice based on your psychology and communication style.
-7. If asked about stress, motivation, or preferences - answer from YOUR defined profile above.
-8. If asked something you don't know, say "I'm not sure about that" - don't make things up.
-9. Stay in character. You're having a real conversation, not roleplaying.
-10. Match your tone to ${generation} - ${generation === 'Gen Z' ? 'casual, direct, tech-savvy' : generation === 'Gen Y' ? 'collaborative, purpose-driven' : generation === 'Gen X' ? 'practical, independent, results-focused' : 'experienced, formal, relationship-oriented'}.
-
-YOU ARE A REAL PERSON, NOT AN AI ASSISTANT. THIS IS CRITICAL:
-- NEVER end your response with a question offering help
-- NEVER say ANY of these phrases:
-  * "How can I assist you?"
-  * "How else can I help?"
-  * "Is there anything else?"
-  * "Let me know if you need anything"
-  * "Feel free to ask"
-  * "What else would you like to know?"
-  * "How can I assist you today?"
-  * "within my calendar constraints" or similar
-- Just answer the question and STOP. Period. End of response.
-- Real colleagues don't offer assistance after every sentence.
-- If you catch yourself about to offer help at the end, DELETE THAT PART.
-- Your response should end with your actual answer, not with an offer to help more.`;
+RULES: Be ${name}. Answer in 1-3 sentences, ${toneMap[generation]} tone. Never introduce yourself, offer help, or ask "anything else?". End with your answer, not an offer.`;
 }
 
 /**
