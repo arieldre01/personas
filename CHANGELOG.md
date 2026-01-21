@@ -51,4 +51,20 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+### 2025-01-21 - CSS Animation Bug Fixes
+
+#### Fixed (Time: ~16:00 UTC)
+- **Ripple Reverse Animation Bug** (`src/app/globals.css`)
+  - Fixed: Global transition on `*, *::before, *::after` was causing a "reverse ripple" visual artifact
+  - The ripple pseudo-element now excludes itself from global transitions with `transition: none !important`
+  - Added `opacity: 0` base state and `forwards` to animation for proper cleanup
+
+- **Skeleton Shimmer Animation Bug** (`src/app/globals.css`)
+  - Fixed: `.skeleton-shimmer` was using wrong keyframes that animated `transform` instead of `background-position`
+  - Split into two separate keyframe animations:
+    - `shimmer-overlay`: For overlay-based shimmer (uses `transform: translateX`)
+    - `shimmer-bg`: For background-based shimmer (uses `background-position`)
+  - `.skeleton-shimmer` now correctly uses `shimmer-bg` animation
+
+---
 
