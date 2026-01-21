@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { loadPersonaKnowledge } from '@/lib/persona-knowledge';
 import { getPersonaById } from '@/lib/personas';
+import { personaBackstories } from '@/lib/persona-prompts';
 import {
   generateText,
   generateTextStream,
@@ -36,13 +37,16 @@ export async function POST(request: NextRequest) {
     let systemInstruction = personaContext || '';
     
     if (persona) {
-      // Load extended knowledge if available
-      const extendedKnowledge = loadPersonaKnowledge(personaId);
+      // Load extended knowledge if available, fall back to backstory
+      let extendedKnowledge = loadPersonaKnowledge(personaId);
+      if (!extendedKnowledge && personaBackstories[personaId]) {
+        extendedKnowledge = personaBackstories[personaId];
+      }
       systemInstruction = buildPersonaSystemInstruction(persona, extendedKnowledge);
       
       // Add scenario context if provided (compressed version)
       if (scenarioContext) {
-        systemInstruction += `\n\n[SCENARIO] ${scenarioContext}\nStay in character. React authentically. 2-4 sentences.`;
+        systemInstruction += `\n\n[SCENARIO] ${scenarioContext}\nStay in character as ${persona.name}. React authentically. 2-4 sentences.`;
       }
     }
 

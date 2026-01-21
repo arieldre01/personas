@@ -92,7 +92,7 @@ Stay fully in character as ${persona.name} and respond naturally to this scenari
               const token = tokenQueue.shift()!;
               displayedContent += token;
               setMessages([{ id: messageId, role: 'persona', content: displayedContent }]);
-              await new Promise(resolve => setTimeout(resolve, 25 + Math.random() * 15));
+              await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 5));
             }
 
             isProcessingQueue = false;
@@ -186,7 +186,7 @@ Stay fully in character as ${persona.name} and respond naturally to this scenari
             ));
 
             // Natural typing delay
-            await new Promise(resolve => setTimeout(resolve, 25 + Math.random() * 15));
+            await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 5));
           }
 
           isProcessingQueue = false;

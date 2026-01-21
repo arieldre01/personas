@@ -131,15 +131,19 @@ export function formatConversationContext(
 ): string {
   const parts: string[] = [];
   
+  // Reinforce persona identity at start of context
+  parts.push(`[Remember: You are ${personaName}. Stay in character as ${personaName} only.]`);
+  parts.push('');
+  
   // Add summary of older messages if exists
   if (window.summary) {
     parts.push(`[Earlier in conversation: ${window.summary}]`);
     parts.push('');
   }
   
-  // Add recent messages
+  // Add recent messages with persona name reinforcement
   window.recentMessages.forEach(msg => {
-    const speaker = msg.role === 'user' ? 'User' : personaName;
+    const speaker = msg.role === 'user' ? 'User' : `${personaName} (you)`;
     parts.push(`${speaker}: ${msg.content}`);
   });
   

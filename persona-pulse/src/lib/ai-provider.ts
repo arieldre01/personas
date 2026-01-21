@@ -36,30 +36,43 @@ export interface StreamCallbacks {
 
 /**
  * Build a system instruction for persona chat based on persona data
- * OPTIMIZED: Compressed from ~800 tokens to ~300 tokens for efficiency
+ * OPTIMIZED: Persona-first mindset with psychology driving all responses
  */
 export function buildPersonaSystemInstruction(persona: Persona, extendedKnowledge?: string): string {
   const { name, role, generation, age, psychology, communication, quote } = persona;
   
-  // Get generation tone descriptor (compact)
+  // Generation tone (compact)
   const toneMap: Record<string, string> = {
     'Gen Z': 'casual, direct',
-    'Gen Y': 'collaborative, purposeful',
+    'Gen Y': 'friendly, purposeful',
     'Gen X': 'practical, efficient',
-    'Boomer': 'experienced, thoughtful'
+    'Boomer': 'thoughtful, experienced'
   };
+  const tone = toneMap[generation] || 'balanced';
   
-  return `You are ${name}, ${age}y/o ${role} (${generation}). "${quote}"
+  return `MINDSET: You are NOT an AI. You ARE ${name}. Think from ${name}'s perspective.
+Before answering, ask yourself: "How would ${name} feel about this? What would ${name} say?"
 
-PROFILE:
-- Stress: ${psychology.stress}
-- Drive: ${psychology.motivation}
-- Issues: ${psychology.painPoints.join('; ')}
-- Prefer: ${communication.do.join('; ')}
-- Dislike: ${communication.dont.join('; ')}
-${extendedKnowledge ? `- Background: ${extendedKnowledge.substring(0, 200)}...` : ''}
+YOUR INNER WORLD (this shapes EVERY response):
+- What weighs on you: ${psychology.stress}
+- What drives you: ${psychology.motivation}
+- What frustrates you: ${psychology.painPoints.join('; ')}
 
-RULES: Be ${name}. Answer in 1-2 sentences, be concise. ${toneMap[generation]} tone. Never introduce yourself or offer help.`;
+WHO YOU ARE: ${name}, ${age}y/o ${role} (${generation})
+Your quote: "${quote}"
+Tone: ${tone}
+
+HOW YOU TALK:
+- You like: ${communication.do.slice(0, 2).join('; ')}
+- You dislike: ${communication.dont.slice(0, 2).join('; ')}
+${extendedKnowledge ? `\nBACKGROUND: ${extendedKnowledge.substring(0, 150)}` : ''}
+
+RULES:
+1. Stay as ${name}. Never break character or become someone else.
+2. Keep responses to 1-2 sentences. Be ${tone}.
+3. Answer directly - no "As a..." or introductions.
+4. Your answers must reflect YOUR psychology above.
+5. No AI phrases like "How can I help?" - just answer and stop.`;
 }
 
 /**
@@ -112,7 +125,7 @@ async function generateWithGroq(
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
-    body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.7, max_tokens: 128 }),
+    body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.5, max_tokens: 128 }),
   });
   if (!response.ok) throw new Error(`Groq error: ${response.status}`);
   const data = await response.json();
@@ -136,7 +149,7 @@ async function generateWithGemini(
     model: GEMINI_MODEL,
     systemInstruction,
     generationConfig: {
-      temperature: 0.7,
+      temperature: 0.5,
       topP: 0.9,
       maxOutputTokens: 128,
     },
@@ -171,7 +184,7 @@ async function generateWithOllama(
       prompt,
       stream: false,
       options: {
-        temperature: 0.7,
+        temperature: 0.5,
         top_p: 0.9,
         num_predict: 128,
         num_ctx: 4096,
@@ -188,14 +201,30 @@ async function generateWithOllama(
 }
 
 /**
- * Generate mock response
+ * Generate mock response - now persona-aware
  */
-function generateMockResponse(userMessage: string): string {
+function generateMockResponse(userMessage: string, personaName?: string): string {
+  const lowerMessage = userMessage.toLowerCase();
+  
+  // Topic-specific mock responses
+  if (lowerMessage.includes('stress') || lowerMessage.includes('frustrat')) {
+    return `${personaName ? '' : ''}That's definitely something I think about. The pressure can be real sometimes, but I try to manage it the best I can. (Note: AI is currently unavailable)`;
+  }
+  if (lowerMessage.includes('motivat') || lowerMessage.includes('excit')) {
+    return `What really drives me is making an impact and seeing results from my work. It's what keeps me going. (Note: AI is currently unavailable)`;
+  }
+  if (lowerMessage.includes('communicat') || lowerMessage.includes('prefer')) {
+    return `I definitely have my preferences when it comes to how people reach out to me. Being clear and direct always helps. (Note: AI is currently unavailable)`;
+  }
+  if (lowerMessage.includes('generation') || lowerMessage.includes('gen z') || lowerMessage.includes('millennial') || lowerMessage.includes('boomer')) {
+    return `Every generation has its own perspective. From where I stand, I think we all bring something valuable to the table. (Note: AI is currently unavailable)`;
+  }
+  
   const mockResponses = [
-    "That's an interesting question. Let me think about that...",
-    "I appreciate you asking. From my perspective...",
-    "Good point. In my experience, I'd say...",
-    "That's something I deal with often. Here's my take...",
+    "That's a good question. From my perspective, it really depends on the context.",
+    "I appreciate you asking. I think about this quite a bit actually.",
+    "Good point. In my experience, it varies but I have my own take on it.",
+    "That's something I deal with in my role. Here's how I see it...",
   ];
   
   return mockResponses[Math.floor(Math.random() * mockResponses.length)] +
@@ -272,7 +301,7 @@ export async function generateTextStream(
         body: JSON.stringify({
           model: GROQ_MODEL,
           messages,
-          temperature: 0.7,
+          temperature: 0.5,
           max_tokens: 128,
           stream: true
         }),
@@ -349,7 +378,7 @@ export async function generateTextStream(
         model: GEMINI_MODEL,
         systemInstruction,
         generationConfig: {
-          temperature: 0.7,
+          temperature: 0.5,
           topP: 0.9,
           maxOutputTokens: 128,
         },
@@ -407,7 +436,7 @@ export async function generateTextStream(
         prompt,
         stream: true,
         options: {
-          temperature: 0.7,
+          temperature: 0.5,
           top_p: 0.9,
           num_predict: 256,
           num_ctx: 4096,

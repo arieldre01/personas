@@ -207,8 +207,8 @@ export function PersonaChat({ persona }: PersonaChatProps) {
                 : msg
             ));
 
-            // Natural typing delay: 20-40ms per token (feels like fast typing)
-            await new Promise(resolve => setTimeout(resolve, 25 + Math.random() * 15));
+            // Fast typing delay: 10-15ms per token (snappy response)
+            await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 5));
           }
 
           isProcessingQueue = false;

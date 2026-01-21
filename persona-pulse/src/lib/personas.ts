@@ -302,9 +302,20 @@ export const personas: Persona[] = [
   },
 ];
 
-// Helper function to get persona by ID
+// Helper function to get persona by ID (searches both main and Amdocs personas)
 export function getPersonaById(id: string): Persona | undefined {
-  return personas.find((p) => p.id === id);
+  // First check main personas
+  const mainPersona = personas.find((p) => p.id === id);
+  if (mainPersona) return mainPersona;
+  
+  // Then check Amdocs personas (lazy import to avoid circular dependency)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { amdocsPersonas } = require('./amdocs-personas');
+    return amdocsPersonas.find((p: Persona) => p.id === id);
+  } catch {
+    return undefined;
+  }
 }
 
 // Amdocs personas have local images
