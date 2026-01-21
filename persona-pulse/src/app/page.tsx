@@ -9,7 +9,8 @@ import { PersonaFinder } from '@/components/PersonaFinder';
 import { PersonaBuilder } from '@/components/PersonaBuilder';
 import { personas, Persona, generationColors } from '@/lib/personas';
 import { getCustomPersonas, CustomPersona, deleteCustomPersona } from '@/lib/custom-personas';
-import { Compass, Users, Sparkles, Github, Moon, Sun, Plus } from 'lucide-react';
+import { Compass, Users, Sparkles, Github, Plus } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function Home() {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
@@ -18,7 +19,6 @@ export default function Home() {
   const [builderOpen, setBuilderOpen] = useState(false);
   const [editingPersona, setEditingPersona] = useState<CustomPersona | null>(null);
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
-  const [isDark, setIsDark] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
 
   // Load custom personas on mount
@@ -82,29 +82,6 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  useEffect(() => {
-    // Check initial preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const savedTheme = localStorage.getItem('theme');
-    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-    setIsDark(shouldBeDark);
-    if (shouldBeDark) {
-      document.documentElement.classList.add('dark');
-    }
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-    if (newIsDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
-
   const handleSelectPersona = (persona: Persona) => {
     setSelectedPersona(persona);
     setDetailOpen(true);
@@ -167,13 +144,7 @@ export default function Home() {
               <Compass className="h-4 w-4" />
               Find Your Persona
             </Button>
-            <button
-              onClick={toggleDarkMode}
-              className="rounded-full p-2.5 text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-              aria-label="Toggle dark mode"
-            >
-              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
+            <ThemeToggle />
             <a
               href="https://github.com/arieldre01/personas"
               target="_blank"

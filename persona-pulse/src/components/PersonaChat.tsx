@@ -398,7 +398,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
+            className={`flex gap-3 message-enter ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
           >
             {/* Avatar */}
             <div

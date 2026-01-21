@@ -84,7 +84,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
   return (
     <div
       className={cn(
-        'flex gap-3 p-4 rounded-lg',
+        'flex gap-3 p-4 rounded-lg message-enter',
         isUser
           ? 'bg-blue-50 dark:bg-blue-950/30'
           : 'bg-gradient-to-br from-gray-50 to-teal-50/30 dark:from-gray-800/50 dark:to-teal-900/20'
