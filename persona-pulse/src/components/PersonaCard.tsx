@@ -107,10 +107,13 @@ export function PersonaCard({
         
         {/* Profile Image/Avatar with animated ring */}
         <div 
-          className="avatar-glow avatar-float avatar-ring-animated relative mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full ring-2 ring-white/80 dark:ring-white/20 shadow-lg flex items-center justify-center bg-white dark:bg-gray-700 z-10"
+          className="avatar-glow avatar-float avatar-ring-animated relative mx-auto mb-3 h-16 w-16 z-10"
           style={{ '--glow-color': glowColors[persona.generation] } as React.CSSProperties}
         >
-          {avatarContent}
+          {/* Inner container for image clipping */}
+          <div className="absolute inset-0 rounded-full overflow-hidden ring-2 ring-white/80 dark:ring-white/20 shadow-lg flex items-center justify-center bg-white dark:bg-gray-700">
+            {avatarContent}
+          </div>
         </div>
 
         {/* Name and Title */}

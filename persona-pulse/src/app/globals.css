@@ -514,7 +514,8 @@
 /* Quote styling enhancement */
 .persona-quote {
   position: relative;
-  padding-left: 12px;
+  padding-left: 14px;
+  padding-right: 14px;
 }
 
 .persona-quote::before {
@@ -522,6 +523,17 @@
   position: absolute;
   left: 0;
   top: -4px;
+  font-size: 24px;
+  font-weight: bold;
+  opacity: 0.2;
+  font-family: Georgia, serif;
+}
+
+.persona-quote::after {
+  content: '"';
+  position: absolute;
+  right: 0;
+  bottom: -8px;
   font-size: 24px;
   font-weight: bold;
   opacity: 0.2;
