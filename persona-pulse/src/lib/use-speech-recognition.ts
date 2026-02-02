@@ -113,21 +113,27 @@ export function useSpeechRecognition(
   const startSilenceTimer = useCallback(() => {
     clearSilenceTimer();
     silenceTimerRef.current = setTimeout(() => {
-      if (recognitionRef.current && isListening) {
-        recognitionRef.current.stop();
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // Already stopped
+          setIsListening(false);
+        }
       }
     }, silenceTimeout);
-  }, [clearSilenceTimer, silenceTimeout, isListening]);
+  }, [clearSilenceTimer, silenceTimeout]);
 
   // Stop listening
   const stopListening = useCallback(() => {
     clearSilenceTimer();
     if (recognitionRef.current) {
       try {
-        recognitionRef.current.stop();
+        recognitionRef.current.abort(); // Use abort for immediate stop
       } catch {
         // Already stopped
       }
+      recognitionRef.current = null;
     }
     setIsListening(false);
   }, [clearSilenceTimer]);
@@ -226,12 +232,18 @@ export function useSpeechRecognition(
     // Handle end
     recognition.onend = () => {
       clearSilenceTimer();
+      recognitionRef.current = null; // Clear the reference
       setIsListening(false);
       
       // Call callback with final transcript (for auto-send)
+      // Use setTimeout to ensure state update propagates first
       const finalText = transcriptRef.current.trim();
       if (autoSendRef.current && onTranscriptRef.current && finalText) {
-        onTranscriptRef.current(finalText);
+        setTimeout(() => {
+          if (onTranscriptRef.current) {
+            onTranscriptRef.current(finalText);
+          }
+        }, 10);
       }
     };
 
