@@ -57,7 +57,9 @@ export function PersonaCard({
     <img
       src={getPersonaImage(persona)}
       alt={persona.name}
-      className="min-w-full min-h-full object-cover transition-transform duration-500 group-hover:scale-110"
+      width={64}
+      height={64}
+      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
       style={{ objectPosition: getPersonaImagePosition(persona) }}
     />
   );
