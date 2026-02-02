@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Persona, generationColors, Generation, getPersonaImage } from '@/lib/personas';
 import { amdocsPersonas } from '@/lib/amdocs-personas';
-import { Send, Loader2, Users, X, Check, Sparkles, Wifi, WifiOff } from 'lucide-react';
+import { Send, Loader2, Users, X, Check, Sparkles, Wifi, WifiOff, Mic, MicOff, AlertCircle } from 'lucide-react';
+import { useSpeechRecognition } from '@/lib/use-speech-recognition';
 
 interface MultiPersonaChatProps {
   open: boolean;
@@ -40,6 +41,47 @@ export function MultiPersonaChat({ open, onClose }: MultiPersonaChatProps) {
   const [aiProvider, setAiProvider] = useState<string>('checking');
   const [providerName, setProviderName] = useState('Checking AI...');
   const responsesEndRef = useRef<HTMLDivElement>(null);
+
+  // Reference for auto-sending after voice input
+  const sendMessageRef = useRef<() => void>(() => {});
+
+  // Speech recognition hook with auto-send
+  const {
+    isSupported: isSpeechSupported,
+    isListening,
+    transcript,
+    error: speechError,
+    startListening,
+    stopListening,
+    clearTranscript,
+  } = useSpeechRecognition({
+    silenceTimeout: 2000, // 2 seconds of silence before auto-stop and send
+    autoSend: true,
+    onTranscript: (text) => {
+      if (text.trim()) {
+        setInput(text.trim());
+        // Auto-send after a brief delay to let state update
+        setTimeout(() => sendMessageRef.current(), 50);
+      }
+    },
+  });
+
+  // Update input when transcript changes (live preview)
+  useEffect(() => {
+    if (transcript) {
+      setInput(transcript);
+    }
+  }, [transcript]);
+
+  // Handle mic button click
+  const handleMicClick = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      clearTranscript();
+      startListening();
+    }
+  };
 
   // Check AI provider status on mount
   useEffect(() => {
@@ -200,6 +242,11 @@ export function MultiPersonaChat({ open, onClose }: MultiPersonaChatProps) {
 
     setIsAsking(false);
   };
+
+  // Keep sendMessageRef updated for voice auto-send
+  useEffect(() => {
+    sendMessageRef.current = askPersonas;
+  });
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -434,20 +481,41 @@ export function MultiPersonaChat({ open, onClose }: MultiPersonaChatProps) {
               <div className="flex gap-2 items-end">
                 <Textarea
                   placeholder={
-                    selectedPersonas.size === 0
-                      ? 'Select personas first...'
-                      : `Ask ${selectedPersonas.size} persona${selectedPersonas.size > 1 ? 's' : ''}...`
+                    isListening 
+                      ? 'Listening...'
+                      : selectedPersonas.size === 0
+                        ? 'Select personas first...'
+                        : `Ask ${selectedPersonas.size} persona${selectedPersonas.size > 1 ? 's' : ''}...`
                   }
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  disabled={selectedPersonas.size === 0 || isAsking}
-                  className="min-h-[48px] max-h-[120px] resize-none text-sm"
+                  disabled={selectedPersonas.size === 0 || isAsking || isListening}
+                  className={`min-h-[48px] max-h-[120px] resize-none text-sm ${isListening ? 'border-red-400 dark:border-red-500' : ''}`}
                   rows={1}
                 />
+                
+                {/* Mic Button */}
+                {isSpeechSupported && (
+                  <Button
+                    onClick={handleMicClick}
+                    size="icon"
+                    variant={isListening ? "destructive" : "outline"}
+                    className={`h-[48px] w-[48px] rounded-lg transition-all ${
+                      isListening 
+                        ? 'mic-pulse bg-red-500 hover:bg-red-600 border-red-500' 
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                    title={isListening ? 'Stop listening' : 'Start voice input'}
+                    disabled={selectedPersonas.size === 0 || isAsking}
+                  >
+                    {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                  </Button>
+                )}
+                
                 <Button
                   onClick={askPersonas}
-                  disabled={!input.trim() || selectedPersonas.size === 0 || isAsking}
+                  disabled={!input.trim() || selectedPersonas.size === 0 || isAsking || isListening}
                   className="h-[48px] w-[48px] bg-gradient-to-r from-purple-500 to-teal-500"
                 >
                   {isAsking ? (
@@ -457,6 +525,14 @@ export function MultiPersonaChat({ open, onClose }: MultiPersonaChatProps) {
                   )}
                 </Button>
               </div>
+              
+              {/* Speech Error Message */}
+              {speechError && (
+                <div className="flex items-center gap-2 mt-2 text-xs text-red-500 dark:text-red-400">
+                  <AlertCircle className="h-3 w-3" />
+                  <span>{speechError}</span>
+                </div>
+              )}
               {selectedPersonas.size > 0 && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                   {conversations.length > 0 

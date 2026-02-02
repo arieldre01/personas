@@ -627,3 +627,45 @@
 .ripple:active::after {
   animation: ripple 0.6s linear;
 }
+
+/* ===== VOICE INPUT MIC BUTTON ===== */
+
+/* Mic pulse animation when listening */
+@keyframes mic-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.mic-pulse {
+  animation: mic-pulse-ring 1.5s ease-out infinite;
+}
+
+/* Mic button glow on hover */
+.mic-glow:hover {
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+/* Sound wave visualization (optional enhancement) */
+@keyframes mic-wave {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.5);
+  }
+}
+
+.mic-wave-bar {
+  animation: mic-wave 0.5s ease-in-out infinite;
+}
+
+.mic-wave-bar:nth-child(1) { animation-delay: 0ms; }
+.mic-wave-bar:nth-child(2) { animation-delay: 100ms; }
+.mic-wave-bar:nth-child(3) { animation-delay: 200ms; }

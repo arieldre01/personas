@@ -8,7 +8,8 @@ import { Scenario, ScenarioFeedback, difficultyColors } from '@/lib/scenarios';
 import { Persona, generationColors, getPersonaImage, getPersonaImagePosition } from '@/lib/personas';
 import { ScenarioHint } from './ScenarioHint';
 import { ScenarioFeedbackModal } from './ScenarioFeedback';
-import { Send, Loader2, ArrowLeft, Target, Clock, Flag, Sparkles, Wifi, WifiOff } from 'lucide-react';
+import { Send, Loader2, ArrowLeft, Target, Clock, Flag, Sparkles, Wifi, WifiOff, Mic, MicOff, AlertCircle } from 'lucide-react';
+import { useSpeechRecognition } from '@/lib/use-speech-recognition';
 
 interface Message {
   id: string;
@@ -34,6 +35,47 @@ export function ScenarioChat({ scenario, persona, onBack }: ScenarioChatProps) {
   const [feedback, setFeedback] = useState<ScenarioFeedback | null>(null);
   const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Reference for auto-sending after voice input
+  const sendMessageRef = useRef<() => void>(() => {});
+
+  // Speech recognition hook with auto-send
+  const {
+    isSupported: isSpeechSupported,
+    isListening,
+    transcript,
+    error: speechError,
+    startListening,
+    stopListening,
+    clearTranscript,
+  } = useSpeechRecognition({
+    silenceTimeout: 2000, // 2 seconds of silence before auto-stop and send
+    autoSend: true,
+    onTranscript: (text) => {
+      if (text.trim()) {
+        setInput(text.trim());
+        // Auto-send after a brief delay to let state update
+        setTimeout(() => sendMessageRef.current(), 50);
+      }
+    },
+  });
+
+  // Update input when transcript changes (live preview)
+  useEffect(() => {
+    if (transcript) {
+      setInput(transcript);
+    }
+  }, [transcript]);
+
+  // Handle mic button click
+  const handleMicClick = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      clearTranscript();
+      startListening();
+    }
+  };
   const colors = generationColors[persona.generation];
   const diffColors = difficultyColors[scenario.difficulty];
 
@@ -222,6 +264,11 @@ Stay fully in character as ${persona.name} and respond naturally to this scenari
     }
   };
 
+  // Keep sendMessageRef updated for voice auto-send
+  useEffect(() => {
+    sendMessageRef.current = sendMessage;
+  });
+
   const endScenario = async () => {
     setShowFeedback(true);
     setIsLoadingFeedback(true);
@@ -341,11 +388,46 @@ Stay fully in character as ${persona.name} and respond naturally to this scenari
 
       <div className="flex-shrink-0 border-t bg-gray-50 dark:bg-gray-900/50 px-4 py-3">
         <div className="flex gap-2 items-end">
-          <Textarea placeholder={`Respond as ${scenario.userRole}...`} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} className="min-h-[48px] max-h-[120px] resize-none text-sm py-2.5 px-3" rows={1} />
-          <Button onClick={sendMessage} disabled={!input.trim() || isTyping} size="icon" className={`${colors.badge} h-[48px] w-[48px] rounded-lg`}>
+          <Textarea 
+            placeholder={isListening ? 'Listening...' : `Respond as ${scenario.userRole}...`} 
+            value={input} 
+            onChange={(e) => setInput(e.target.value)} 
+            onKeyDown={handleKeyDown} 
+            className={`min-h-[48px] max-h-[120px] resize-none text-sm py-2.5 px-3 ${isListening ? 'border-red-400 dark:border-red-500' : ''}`} 
+            rows={1}
+            disabled={isListening}
+          />
+          
+          {/* Mic Button */}
+          {isSpeechSupported && (
+            <Button
+              onClick={handleMicClick}
+              size="icon"
+              variant={isListening ? "destructive" : "outline"}
+              className={`h-[48px] w-[48px] rounded-lg transition-all ${
+                isListening 
+                  ? 'mic-pulse bg-red-500 hover:bg-red-600 border-red-500' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+              title={isListening ? 'Stop listening' : 'Start voice input'}
+              disabled={isTyping}
+            >
+              {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            </Button>
+          )}
+          
+          <Button onClick={sendMessage} disabled={!input.trim() || isTyping || isListening} size="icon" className={`${colors.badge} h-[48px] w-[48px] rounded-lg`}>
             {isTyping ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
           </Button>
         </div>
+        
+        {/* Speech Error Message */}
+        {speechError && (
+          <div className="flex items-center gap-2 mt-2 text-xs text-red-500 dark:text-red-400">
+            <AlertCircle className="h-3 w-3" />
+            <span>{speechError}</span>
+          </div>
+        )}
         
         {messages.length >= 3 && (
           <Button variant="outline" onClick={endScenario} className="w-full mt-3 gap-2 text-sm" disabled={isTyping}>

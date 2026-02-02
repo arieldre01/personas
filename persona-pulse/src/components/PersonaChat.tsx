@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Persona, generationColors } from '@/lib/personas';
 import { getFullPersonaContext } from '@/lib/persona-prompts';
-import { Send, Loader2, Wifi, WifiOff, Trash2, Sparkles, RefreshCw, MessageCircle, Zap } from 'lucide-react';
+import { Send, Loader2, Wifi, WifiOff, Trash2, Sparkles, RefreshCw, MessageCircle, Zap, Mic, MicOff, AlertCircle } from 'lucide-react';
+import { useSpeechRecognition } from '@/lib/use-speech-recognition';
 import { getPersonaImage, getPersonaImagePosition } from '@/lib/personas';
 import { saveChat, loadChat, clearChat } from '@/lib/chat-storage';
 import { analyzeMessage, FeedbackResult } from '@/lib/style-analyzer';
@@ -42,6 +43,47 @@ export function PersonaChat({ persona }: PersonaChatProps) {
   const [lastFailedUserMessage, setLastFailedUserMessage] = useState<string | null>(null);
   const [instantFeedback, setInstantFeedback] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Reference for auto-sending after voice input
+  const sendMessageRef = useRef<() => void>(() => {});
+
+  // Speech recognition hook with auto-send
+  const {
+    isSupported: isSpeechSupported,
+    isListening,
+    transcript,
+    error: speechError,
+    startListening,
+    stopListening,
+    clearTranscript,
+  } = useSpeechRecognition({
+    silenceTimeout: 2000, // 2 seconds of silence before auto-stop and send
+    autoSend: true,
+    onTranscript: (text) => {
+      if (text.trim()) {
+        setInput(text.trim());
+        // Auto-send after a brief delay to let state update
+        setTimeout(() => sendMessageRef.current(), 50);
+      }
+    },
+  });
+
+  // Update input when transcript changes (live preview)
+  useEffect(() => {
+    if (transcript) {
+      setInput(transcript);
+    }
+  }, [transcript]);
+
+  // Handle mic button click
+  const handleMicClick = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      clearTranscript();
+      startListening();
+    }
+  };
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const colors = generationColors[persona.generation];
   const personaContext = getFullPersonaContext(persona);
@@ -269,6 +311,11 @@ export function PersonaChat({ persona }: PersonaChatProps) {
   const handleSend = async () => {
     await sendMessage(input);
   };
+
+  // Keep sendMessageRef updated for voice auto-send
+  useEffect(() => {
+    sendMessageRef.current = handleSend;
+  });
 
   const handleRetry = async () => {
     if (lastFailedUserMessage) {
@@ -510,16 +557,40 @@ export function PersonaChat({ persona }: PersonaChatProps) {
         {/* Input */}
         <div className="flex gap-2 items-end">
           <Textarea
-            placeholder={`Message ${persona.name}...`}
+            placeholder={isListening ? 'Listening...' : `Message ${persona.name}...`}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="min-h-[48px] max-h-[120px] resize-none text-sm py-2.5 px-3"
+            className={`min-h-[48px] max-h-[120px] resize-none text-sm py-2.5 px-3 ${isListening ? 'border-red-400 dark:border-red-500' : ''}`}
             rows={1}
+            disabled={isListening}
           />
+          
+          {/* Mic Button */}
+          {isSpeechSupported && (
+            <Button
+              onClick={handleMicClick}
+              size="icon"
+              variant={isListening ? "destructive" : "outline"}
+              className={`h-[48px] w-[48px] rounded-lg transition-all ${
+                isListening 
+                  ? 'mic-pulse bg-red-500 hover:bg-red-600 border-red-500' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+              title={isListening ? 'Stop listening' : 'Start voice input'}
+              disabled={isTyping}
+            >
+              {isListening ? (
+                <MicOff className="h-5 w-5" />
+              ) : (
+                <Mic className="h-5 w-5" />
+              )}
+            </Button>
+          )}
+          
           <Button
             onClick={handleSend}
-            disabled={!input.trim() || isTyping}
+            disabled={!input.trim() || isTyping || isListening}
             size="icon"
             className={`${colors.badge} h-[48px] w-[48px] rounded-lg`}
           >
@@ -530,6 +601,14 @@ export function PersonaChat({ persona }: PersonaChatProps) {
             )}
           </Button>
         </div>
+        
+        {/* Speech Error Message */}
+        {speechError && (
+          <div className="flex items-center gap-2 mt-2 text-xs text-red-500 dark:text-red-400">
+            <AlertCircle className="h-3 w-3" />
+            <span>{speechError}</span>
+          </div>
+        )}
       </div>
     </div>
   );
