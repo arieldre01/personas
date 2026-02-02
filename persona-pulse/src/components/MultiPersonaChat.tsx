@@ -42,9 +42,6 @@ export function MultiPersonaChat({ open, onClose }: MultiPersonaChatProps) {
   const [providerName, setProviderName] = useState('Checking AI...');
   const responsesEndRef = useRef<HTMLDivElement>(null);
 
-  // Reference for auto-sending after voice input
-  const sendMessageRef = useRef<() => void>(() => {});
-
   // Speech recognition hook with auto-send
   const {
     isSupported: isSpeechSupported,
@@ -59,9 +56,8 @@ export function MultiPersonaChat({ open, onClose }: MultiPersonaChatProps) {
     autoSend: true,
     onTranscript: (text) => {
       if (text.trim()) {
-        setInput(text.trim());
-        // Auto-send after a brief delay to let state update
-        setTimeout(() => sendMessageRef.current(), 50);
+        // Directly send the message (bypass state delay)
+        askPersonasDirect(text.trim());
       }
     },
   });
@@ -155,12 +151,22 @@ export function MultiPersonaChat({ open, onClose }: MultiPersonaChatProps) {
   };
 
   // Ask the question to all selected personas
+  // Direct ask for voice input (bypasses state)
+  const askPersonasDirect = async (text: string) => {
+    if (!text.trim() || selectedPersonas.size === 0 || isAsking) return;
+    setInput('');
+    await askPersonasCore(text.trim());
+  };
+
   const askPersonas = async () => {
     if (!input.trim() || selectedPersonas.size === 0 || isAsking) return;
-
-    const question = input.trim();
-    const conversationId = Date.now().toString();
+    const text = input.trim();
     setInput('');
+    await askPersonasCore(text);
+  };
+
+  const askPersonasCore = async (question: string) => {
+    const conversationId = Date.now().toString();
     setIsAsking(true);
 
     // Get selected personas in order
@@ -242,11 +248,6 @@ export function MultiPersonaChat({ open, onClose }: MultiPersonaChatProps) {
 
     setIsAsking(false);
   };
-
-  // Keep sendMessageRef updated for voice auto-send
-  useEffect(() => {
-    sendMessageRef.current = askPersonas;
-  });
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

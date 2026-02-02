@@ -36,9 +36,6 @@ export function ScenarioChat({ scenario, persona, onBack }: ScenarioChatProps) {
   const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Reference for auto-sending after voice input
-  const sendMessageRef = useRef<() => void>(() => {});
-
   // Speech recognition hook with auto-send
   const {
     isSupported: isSpeechSupported,
@@ -53,9 +50,8 @@ export function ScenarioChat({ scenario, persona, onBack }: ScenarioChatProps) {
     autoSend: true,
     onTranscript: (text) => {
       if (text.trim()) {
-        setInput(text.trim());
-        // Auto-send after a brief delay to let state update
-        setTimeout(() => sendMessageRef.current(), 50);
+        // Directly send the message (bypass state delay)
+        sendMessageDirect(text.trim());
       }
     },
   });
@@ -174,12 +170,23 @@ Stay fully in character as ${persona.name} and respond naturally to this scenari
     startScenario();
   }, [persona, scenario]);
 
+  // Direct send for voice input (bypasses state)
+  const sendMessageDirect = async (text: string) => {
+    if (!text.trim() || isTyping) return;
+    setInput('');
+    await sendMessageCore(text.trim());
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || isTyping) return;
-
-    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: input.trim() };
-    setMessages((prev) => [...prev, userMessage]);
+    const text = input.trim();
     setInput('');
+    await sendMessageCore(text);
+  };
+
+  const sendMessageCore = async (messageText: string) => {
+    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: messageText };
+    setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
     setCurrentHint(null);
 
@@ -263,11 +270,6 @@ Stay fully in character as ${persona.name} and respond naturally to this scenari
       setIsTyping(false);
     }
   };
-
-  // Keep sendMessageRef updated for voice auto-send
-  useEffect(() => {
-    sendMessageRef.current = sendMessage;
-  });
 
   const endScenario = async () => {
     setShowFeedback(true);

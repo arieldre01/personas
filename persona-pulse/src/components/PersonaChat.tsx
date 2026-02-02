@@ -44,9 +44,6 @@ export function PersonaChat({ persona }: PersonaChatProps) {
   const [instantFeedback, setInstantFeedback] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Reference for auto-sending after voice input
-  const sendMessageRef = useRef<() => void>(() => {});
-
   // Speech recognition hook with auto-send
   const {
     isSupported: isSpeechSupported,
@@ -61,9 +58,8 @@ export function PersonaChat({ persona }: PersonaChatProps) {
     autoSend: true,
     onTranscript: (text) => {
       if (text.trim()) {
-        setInput(text.trim());
-        // Auto-send after a brief delay to let state update
-        setTimeout(() => sendMessageRef.current(), 50);
+        // Directly send the message (bypass state delay)
+        sendMessage(text.trim());
       }
     },
   });
@@ -311,11 +307,6 @@ export function PersonaChat({ persona }: PersonaChatProps) {
   const handleSend = async () => {
     await sendMessage(input);
   };
-
-  // Keep sendMessageRef updated for voice auto-send
-  useEffect(() => {
-    sendMessageRef.current = handleSend;
-  });
 
   const handleRetry = async () => {
     if (lastFailedUserMessage) {
