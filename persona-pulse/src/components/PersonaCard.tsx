@@ -57,7 +57,7 @@ export function PersonaCard({
     <img
       src={getPersonaImage(persona)}
       alt={persona.name}
-      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+      className="min-w-full min-h-full object-cover transition-transform duration-500 group-hover:scale-110"
       style={{ objectPosition: getPersonaImagePosition(persona) }}
     />
   );
@@ -107,13 +107,10 @@ export function PersonaCard({
         
         {/* Profile Image/Avatar with animated ring */}
         <div 
-          className="avatar-glow avatar-float avatar-ring-animated relative mx-auto mb-3 h-16 w-16 rounded-full ring-2 ring-white/80 dark:ring-white/20 shadow-lg bg-white dark:bg-gray-700 z-10"
+          className="avatar-glow avatar-float avatar-ring-animated relative mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full ring-2 ring-white/80 dark:ring-white/20 shadow-lg flex items-center justify-center bg-white dark:bg-gray-700 z-10"
           style={{ '--glow-color': glowColors[persona.generation] } as React.CSSProperties}
         >
-          {/* Image container with overflow hidden */}
-          <div className="absolute inset-0 rounded-full overflow-hidden">
-            {avatarContent}
-          </div>
+          {avatarContent}
         </div>
 
         {/* Name and Title */}
