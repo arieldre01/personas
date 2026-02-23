@@ -294,6 +294,42 @@ export const amdocsPersonas: Persona[] = [
       ],
     },
   },
+  {
+    id: 'mateo',
+    name: 'Mateo',
+    title: 'The Early Adopter',
+    role: 'Individual Contributor, Tech-Savvy Innovator',
+    location: 'CALA Region',
+    age: 33,
+    generation: 'Gen Y' as Generation,
+    tenure: '8 Years',
+    imageQuery: 'tech professional developer',
+    quote: "If you can't explain it in 5 bullets, don't send it. Show me the tools, the access, and how I can actually use it.",
+    psychology: {
+      stress: 'Communication that lacks technical depth or real actionable content - corporate fluff wastes his time.',
+      motivation: 'Staying technically relevant, being an early adopter of new tech and AI tools, and continuous learning.',
+      painPoints: [
+        'Overly polished comms that lack technical depth',
+        'No access to learning resources, licenses, or AI setups',
+        'Missing early visibility into upcoming tools and roadmaps',
+        'Long emails without clear relevance to his work',
+      ],
+    },
+    communication: {
+      do: [
+        'Keep it short, clear, and technical (5 bullets max)',
+        'Share practical, role-relevant tech and AI updates',
+        'Provide early access to tools, roadmaps, and builder insights',
+        'Use Monday Mail, Teams, and targeted emails from tech leaders',
+      ],
+      dont: [
+        'Send corporate fluff or hype without substance',
+        'Use overly polished messaging that lacks technical depth',
+        'Make him dig for access to tools or learning resources',
+        'Send long emails without clear "what\'s in it for me"',
+      ],
+    },
+  },
 ];
 
 // Helper to get Amdocs persona by ID

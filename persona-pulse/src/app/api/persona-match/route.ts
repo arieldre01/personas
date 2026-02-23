@@ -98,6 +98,13 @@ const amdocsPersonaKeywords: Record<string, { keywords: string[]; weight: number
     { keywords: ['mobile', 'engagement', 'recognition'], weight: 3 },
     { keywords: ['uk', 'europe', 'regional'], weight: 2 },
   ],
+  mateo: [
+    { keywords: ['tech', 'technical', 'developer', 'engineer', 'early adopter', 'innovator'], weight: 4 },
+    { keywords: ['30s', 'gen y', 'millennial', '33'], weight: 3 },
+    { keywords: ['ai', 'tools', 'learning', 'skills', 'upskill'], weight: 4 },
+    { keywords: ['short', 'clear', 'concise', 'bullets', 'direct'], weight: 3 },
+    { keywords: ['latin', 'cala', 'individual contributor'], weight: 2 },
+  ],
 };
 
 // Reason templates for Amdocs personas
@@ -133,6 +140,10 @@ const amdocsPersonaReasons: Record<string, string[]> = {
   oliver: [
     "Your site leadership role matches Oliver, the Site Leader.",
     "Like Oliver, you're a go-to person who values mobile-friendly, concise communications.",
+  ],
+  mateo: [
+    "Your tech-savvy approach and love for early adoption matches Mateo, the Early Adopter.",
+    "Like Mateo, you value technical depth, clear communication, and staying ahead with new tools.",
   ],
 };
 
