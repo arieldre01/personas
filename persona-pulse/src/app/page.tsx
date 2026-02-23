@@ -8,13 +8,18 @@ import { PersonaDetail } from '@/components/PersonaDetail';
 import { PersonaFinder } from '@/components/PersonaFinder';
 import { PersonaBuilder } from '@/components/PersonaBuilder';
 import { MultiPersonaChat } from '@/components/MultiPersonaChat';
+import { TeamGrid } from '@/components/TeamGrid';
+import { TeamBuilder } from '@/components/TeamBuilder';
+import { TeamDetail } from '@/components/TeamDetail';
 import { personas, Persona, generationColors } from '@/lib/personas';
 import { amdocsPersonas } from '@/lib/amdocs-personas';
 import { getCustomPersonas, CustomPersona, deleteCustomPersona } from '@/lib/custom-personas';
-import { Compass, Users, Sparkles, Github, Plus, Building2, FlaskConical, MessageCircle } from 'lucide-react';
+import { Team, getTeams, deleteTeam } from '@/lib/teams';
+import { Compass, Users, Sparkles, Github, Plus, Building2, FlaskConical, MessageCircle, UsersRound, User } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 type PersonaSet = 'amdocs' | 'mock';
+type ViewMode = 'personas' | 'teams';
 
 export default function Home() {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
@@ -26,10 +31,20 @@ export default function Home() {
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [personaSet, setPersonaSet] = useState<PersonaSet>('amdocs');
+  const [viewMode, setViewMode] = useState<ViewMode>('personas');
+  
+  // Team state
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [teamDetailOpen, setTeamDetailOpen] = useState(false);
+  const [teamBuilderOpen, setTeamBuilderOpen] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [groupChatPersonas, setGroupChatPersonas] = useState<Persona[]>([]);
 
-  // Load custom personas on mount
+  // Load custom personas and teams on mount
   useEffect(() => {
     setCustomPersonas(getCustomPersonas());
+    setTeams(getTeams());
   }, []);
 
   // Get the base personas based on selected set
@@ -122,6 +137,49 @@ export default function Home() {
     setCustomPersonas(getCustomPersonas());
   };
 
+  // Team handlers
+  const handleSelectTeam = (team: Team) => {
+    setSelectedTeam(team);
+    setTeamDetailOpen(true);
+  };
+
+  const handleCreateTeam = () => {
+    setEditingTeam(null);
+    setTeamBuilderOpen(true);
+  };
+
+  const handleEditTeam = (team: Team) => {
+    setEditingTeam(team);
+    setTeamBuilderOpen(true);
+  };
+
+  const handleDeleteTeam = (id: string) => {
+    if (confirm('Are you sure you want to delete this team?')) {
+      deleteTeam(id);
+      setTeams(getTeams());
+    }
+  };
+
+  const handleTeamSaved = () => {
+    setTeams(getTeams());
+  };
+
+  const handleStartGroupChat = (members: Persona[]) => {
+    setGroupChatPersonas(members);
+    setMultiChatOpen(true);
+  };
+
+  const handleViewPersonaFromTeam = (persona: Persona) => {
+    setSelectedPersona(persona);
+    setDetailOpen(true);
+  };
+
+  const getTeamMembers = (team: Team): Persona[] => {
+    return team.memberIds
+      .map(id => allPersonas.find(p => p.id === id))
+      .filter((p): p is Persona => p !== undefined);
+  };
+
   return (
     <div className="min-h-screen hero-pattern">
       {/* Header */}
@@ -165,21 +223,35 @@ export default function Home() {
             </div>
 
             <Button
-              onClick={() => setMultiChatOpen(true)}
+              onClick={() => {
+                setGroupChatPersonas([]);
+                setMultiChatOpen(true);
+              }}
               variant="outline"
               className="gap-2"
             >
               <MessageCircle className="h-4 w-4" />
               Group Chat
             </Button>
-            <Button
-              onClick={handleCreatePersona}
-              variant="outline"
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Create Persona
-            </Button>
+            {viewMode === 'personas' ? (
+              <Button
+                onClick={handleCreatePersona}
+                variant="outline"
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Create Persona
+              </Button>
+            ) : (
+              <Button
+                onClick={handleCreateTeam}
+                variant="outline"
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Create Team
+              </Button>
+            )}
             <Button
               onClick={() => setFinderOpen(true)}
               className="gap-2 bg-gradient-to-r from-purple-500 to-teal-500 hover:from-purple-600 hover:to-teal-600 shadow-lg shadow-purple-500/25"
@@ -258,26 +330,79 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Persona Grid */}
+      {/* Personas/Teams Section */}
       <section id="personas" className="container mx-auto px-4 pb-20">
-        <div className="mb-8 text-center">
-          <h2 className="text-2xl font-bold">Meet the Personas</h2>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Click on any persona to explore their profile and start a conversation
-          </p>
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-            Tip: Use arrow keys to navigate, Enter to select
-          </p>
+        {/* View Mode Toggle */}
+        <div className="mb-8">
+          <div className="flex justify-center mb-6">
+            <div className="flex items-center rounded-full border bg-gray-100 dark:bg-gray-800 p-1">
+              <button
+                onClick={() => setViewMode('personas')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  viewMode === 'personas'
+                    ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <User className="h-4 w-4" />
+                Personas
+              </button>
+              <button
+                onClick={() => setViewMode('teams')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  viewMode === 'teams'
+                    ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <UsersRound className="h-4 w-4" />
+                Teams
+              </button>
+            </div>
+          </div>
+
+          <div className="text-center">
+            {viewMode === 'personas' ? (
+              <>
+                <h2 className="text-2xl font-bold">Meet the Personas</h2>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                  Click on any persona to explore their profile and start a conversation
+                </p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                  Tip: Use arrow keys to navigate, Enter to select
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold">Your Teams</h2>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                  Create teams to group personas and start group conversations
+                </p>
+              </>
+            )}
+          </div>
         </div>
 
-        <PersonaGrid 
-          personas={allPersonas} 
-          onSelectPersona={handleSelectPersona}
-          focusedIndex={focusedIndex}
-          onFocusChange={setFocusedIndex}
-          onEditPersona={handleEditPersona}
-          onDeletePersona={handleDeletePersona}
-        />
+        {viewMode === 'personas' ? (
+          <PersonaGrid 
+            personas={allPersonas} 
+            onSelectPersona={handleSelectPersona}
+            focusedIndex={focusedIndex}
+            onFocusChange={setFocusedIndex}
+            onEditPersona={handleEditPersona}
+            onDeletePersona={handleDeletePersona}
+          />
+        ) : (
+          <TeamGrid
+            teams={teams}
+            allPersonas={allPersonas}
+            onSelectTeam={handleSelectTeam}
+            focusedIndex={focusedIndex}
+            onFocusChange={setFocusedIndex}
+            onEditTeam={handleEditTeam}
+            onDeleteTeam={handleDeleteTeam}
+          />
+        )}
       </section>
 
       {/* Footer */}
@@ -321,7 +446,35 @@ export default function Home() {
 
       <MultiPersonaChat
         open={multiChatOpen}
-        onClose={() => setMultiChatOpen(false)}
+        onClose={() => {
+          setMultiChatOpen(false);
+          setGroupChatPersonas([]);
+        }}
+        initialPersonas={groupChatPersonas}
+      />
+
+      <TeamBuilder
+        open={teamBuilderOpen}
+        onClose={() => {
+          setTeamBuilderOpen(false);
+          setEditingTeam(null);
+        }}
+        onSave={handleTeamSaved}
+        editTeam={editingTeam}
+        availablePersonas={allPersonas}
+        onCreatePersona={() => {
+          setTeamBuilderOpen(false);
+          handleCreatePersona();
+        }}
+      />
+
+      <TeamDetail
+        team={selectedTeam}
+        members={selectedTeam ? getTeamMembers(selectedTeam) : []}
+        open={teamDetailOpen}
+        onClose={() => setTeamDetailOpen(false)}
+        onStartGroupChat={handleStartGroupChat}
+        onViewPersona={handleViewPersonaFromTeam}
       />
     </div>
   );
