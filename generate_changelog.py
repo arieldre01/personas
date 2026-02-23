@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Automated CHANGELOG.md generator using Ollama and Git.
+Automated CHANGELOG.md generator using Groq API (or Ollama fallback) and Git.
 Zero external dependencies - uses only Python standard library.
-Includes auto-install for Ollama if not present.
 """
 
 import subprocess
@@ -27,13 +26,18 @@ if sys.platform == 'win32':
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # Configuration
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
+GROQ_MODEL = "llama-3.1-8b-instant"  # Fast and free
+
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_TAGS_URL = "http://localhost:11434/api/tags"
-MODEL = "phi3:mini"  # Fast model for CI - 3x faster than mistral on CPU
+OLLAMA_MODEL = "phi3:mini"  # Fallback for local use
+
 CHANGELOG_FILE = "CHANGELOG.md"
 MAX_DIFF_CHARS = 2000  # Smaller diff for faster and more focused CI processing
 
-# Ollama download URLs
+# Ollama download URLs (for local fallback)
 OLLAMA_WINDOWS_URL = "https://ollama.com/download/OllamaSetup.exe"
 OLLAMA_LINUX_INSTALL = "curl -fsSL https://ollama.com/install.sh | sh"
 OLLAMA_MAC_URL = "https://ollama.com/download/Ollama-darwin.zip"
@@ -551,25 +555,61 @@ def get_diff(mode: str = 'auto') -> Optional[str]:
         return None
 
 
-def generate_changelog_entry(diff: str) -> Optional[str]:
+def generate_with_groq(diff: str) -> Optional[str]:
+    """
+    Use Groq API to generate a changelog entry from the git diff.
+    Returns the generated entry or None on error.
+    """
+    if not GROQ_API_KEY:
+        return None
+    
+    try:
+        payload = {
+            "model": GROQ_MODEL,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": f"Code changes:\n\n{diff}"}
+            ],
+            "temperature": 0.3,
+            "max_tokens": 100
+        }
+        
+        payload_bytes = json.dumps(payload).encode('utf-8')
+        request = Request(
+            GROQ_API_URL,
+            data=payload_bytes,
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {GROQ_API_KEY}'
+            }
+        )
+        
+        with urlopen(request, timeout=30) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            generated_text = result.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+            
+            if not generated_text:
+                print("[WARN] Groq returned an empty response")
+                return None
+            
+            return generated_text
+    
+    except Exception as e:
+        print(f"[WARN] Groq API error: {e}")
+        return None
+
+
+def generate_with_ollama(diff: str) -> Optional[str]:
     """
     Use Ollama API to generate a changelog entry from the git diff.
     Returns the generated entry or None on error.
     """
     try:
-        # Truncate diff if too large
-        original_size = len(diff)
-        diff = truncate_diff(diff)
-        if len(diff) < original_size:
-            print(f"[WARN] Diff truncated from {original_size} to {len(diff)} characters")
-        
-        # Prepare the prompt (combine system prompt with user prompt)
         user_prompt = f"Code changes:\n\n{diff}"
         full_prompt = f"{SYSTEM_PROMPT}\n\n{user_prompt}"
         
-        # Call Ollama API using urllib
         payload = {
-            "model": MODEL,
+            "model": OLLAMA_MODEL,
             "prompt": full_prompt,
             "stream": False
         }
@@ -581,7 +621,7 @@ def generate_changelog_entry(diff: str) -> Optional[str]:
             headers={'Content-Type': 'application/json'}
         )
         
-        with urlopen(request, timeout=300) as response:  # 5 min timeout
+        with urlopen(request, timeout=300) as response:
             result = json.loads(response.read().decode('utf-8'))
             generated_text = result.get("response", "").strip()
             
@@ -593,25 +633,44 @@ def generate_changelog_entry(diff: str) -> Optional[str]:
     
     except URLError as e:
         if "Connection refused" in str(e) or "No connection" in str(e):
-            print("[ERROR] Connection refused. Is Ollama running? Try 'ollama serve'")
+            print("[WARN] Ollama not running (connection refused)")
         else:
-            print(f"[ERROR] Network error calling Ollama API: {e}")
-        return None
-    except HTTPError as e:
-        print(f"[ERROR] HTTP error calling Ollama API: {e.code} {e.reason}")
-        return None
-    except socket.timeout:
-        print("[ERROR] Request timed out. Ollama might be processing a large request.")
-        return None
-    except json.JSONDecodeError as e:
-        print(f"[ERROR] Invalid JSON response from Ollama: {e}")
-        return None
-    except KeyError as e:
-        print(f"[ERROR] Unexpected response format from Ollama: {e}")
+            print(f"[WARN] Ollama network error: {e}")
         return None
     except Exception as e:
-        print(f"[ERROR] Unexpected error: {e}")
+        print(f"[WARN] Ollama error: {e}")
         return None
+
+
+def generate_changelog_entry(diff: str) -> Optional[str]:
+    """
+    Generate a changelog entry from the git diff.
+    Tries Groq first (fast, cloud), then falls back to Ollama (local).
+    Returns the generated entry or None on error.
+    """
+    # Truncate diff if too large
+    original_size = len(diff)
+    diff = truncate_diff(diff)
+    if len(diff) < original_size:
+        print(f"[WARN] Diff truncated from {original_size} to {len(diff)} characters")
+    
+    # Try Groq first (fast, reliable for CI)
+    if GROQ_API_KEY:
+        print("[INFO] Using Groq API...")
+        result = generate_with_groq(diff)
+        if result:
+            return result
+        print("[WARN] Groq failed, trying Ollama...")
+    
+    # Fall back to Ollama (local)
+    if check_ollama_running():
+        print("[INFO] Using Ollama (local)...")
+        result = generate_with_ollama(diff)
+        if result:
+            return result
+    
+    print("[ERROR] No AI provider available")
+    return None
 
 
 # =============================================================================
@@ -805,13 +864,23 @@ def main(auto_write=False, ci_mode=False):
         auto_write: If True, skip confirmation and write automatically.
         ci_mode: If True, running in CI environment (GitHub Actions).
     """
-    # Pre-flight checks with auto-install
+    # Pre-flight checks
     print("Running pre-flight checks...")
     
-    if not ensure_ollama_ready(auto_install=True):
-        print("\n[ERROR] Ollama setup failed")
-        print("   Please install manually from: https://ollama.com/download")
-        sys.exit(1)
+    # Check if we have at least one AI provider
+    has_groq = bool(GROQ_API_KEY)
+    has_ollama = check_ollama_running()
+    
+    if has_groq:
+        print("[OK] Groq API key configured")
+    elif has_ollama:
+        print("[OK] Ollama is running")
+    else:
+        # No provider available - try to setup Ollama
+        if not ensure_ollama_ready(auto_install=True):
+            print("\n[ERROR] No AI provider available")
+            print("   Either set GROQ_API_KEY or install Ollama from: https://ollama.com/download")
+            sys.exit(1)
     
     print("\n[OK] All pre-flight checks passed!")
     
@@ -1042,13 +1111,17 @@ Usage:
 Options:
     --install     Install the git hook for automatic changelog generation
     --uninstall   Remove the git hook
-    --setup       Check/install Ollama and download the model
+    --setup       Check/install Ollama and download the model (optional if using Groq)
     --auto        Generate changelog without confirmation prompt
     --ci          CI mode (auto-detect platform: GitHub, Bitbucket, GitLab)
     --github      Force GitHub Actions mode
     --bitbucket   Force Bitbucket Pipelines mode
     --gitlab      Force GitLab CI mode
     --help        Show this help message
+
+AI Providers (tried in order):
+    1. Groq API (fast, cloud) - set GROQ_API_KEY environment variable
+    2. Ollama (local) - install from https://ollama.com/download
 
 Supported CI Platforms:
     - GitHub Actions (auto-detected via GITHUB_ACTIONS env var)
@@ -1069,10 +1142,7 @@ Examples:
     # Manual changelog generation
     python generate_changelog.py
     
-    # Check Ollama setup
-    python generate_changelog.py --setup
-    
-    # CI mode with auto-detection
+    # CI mode with auto-detection (uses GROQ_API_KEY if set)
     python generate_changelog.py --ci
     
     # Force specific platform
@@ -1101,7 +1171,10 @@ if __name__ == "__main__":
     
     # Check for --setup flag (just install/setup, don't generate changelog)
     if '--setup' in sys.argv:
-        print("Running Ollama setup...")
+        if GROQ_API_KEY:
+            print("[OK] Groq API key is configured - no local setup needed!")
+            sys.exit(0)
+        print("Running Ollama setup (for local fallback)...")
         if ensure_ollama_ready(auto_install=True):
             print("\n[OK] Setup complete! You can now use the changelog generator.")
             sys.exit(0)

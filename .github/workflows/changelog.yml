@@ -26,39 +26,6 @@ jobs:
         with:
           python-version: '3.11'
       
-      - name: Cache Ollama model
-        uses: actions/cache@v4
-        id: cache-ollama
-        with:
-          path: ~/.ollama
-          key: ollama-phi3-mini-v1
-      
-      - name: Install Ollama
-        run: |
-          if ! command -v ollama &> /dev/null; then
-            echo "Installing Ollama..."
-            curl -fsSL https://ollama.com/install.sh | sh
-          fi
-      
-      - name: Start Ollama service
-        run: |
-          ollama serve &
-          # Wait for Ollama API to be ready (up to 60 seconds)
-          for i in {1..30}; do
-            if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
-              echo "Ollama is ready!"
-              break
-            fi
-            echo "Waiting for Ollama... ($i/30)"
-            sleep 2
-          done
-      
-      - name: Pull phi3:mini model
-        run: |
-          if ! ollama list | grep -q "phi3:mini"; then
-            ollama pull phi3:mini
-          fi
-      
       - name: Calculate new version
         id: version
         run: |
@@ -99,6 +66,7 @@ jobs:
           echo "entry=$ENTRY" >> $GITHUB_OUTPUT
         env:
           GITHUB_ACTIONS: true
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       
       - name: Add version and author to changelog
         run: |
