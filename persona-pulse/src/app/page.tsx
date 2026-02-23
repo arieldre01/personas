@@ -306,6 +306,7 @@ export default function Home() {
         open={finderOpen}
         onClose={() => setFinderOpen(false)}
         onPersonaMatch={handlePersonaMatch}
+        personaSet={personaSet}
       />
 
       <PersonaBuilder

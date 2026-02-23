@@ -9,6 +9,7 @@ import { Loader2, Sparkles, Send, PenLine, RefreshCw } from 'lucide-react';
 
 interface FinderFreeformProps {
   onPersonaMatch: (persona: Persona) => void;
+  personaSet?: 'amdocs' | 'mock';
 }
 
 // Conversation prompts to help users who get stuck
@@ -19,7 +20,7 @@ const conversationStarters = [
   "Do you manage people?",
 ];
 
-export function FinderFreeform({ onPersonaMatch }: FinderFreeformProps) {
+export function FinderFreeform({ onPersonaMatch, personaSet = 'amdocs' }: FinderFreeformProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -57,6 +58,7 @@ export function FinderFreeform({ onPersonaMatch }: FinderFreeformProps) {
         body: JSON.stringify({
           userText: text,
           context: messages.map(m => `${m.role}: ${m.content}`).join('\n'),
+          personaSet,
         }),
       });
 

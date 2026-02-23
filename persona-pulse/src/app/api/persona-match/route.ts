@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { personas } from '@/lib/personas';
+import { amdocsPersonas } from '@/lib/amdocs-personas';
 import { generateText, isGeminiAvailable, isOllamaAvailable } from '@/lib/ai-provider';
 
 // Keyword-based persona matching profiles for fallback
@@ -47,6 +48,94 @@ const personaKeywords: Record<string, { keywords: string[]; weight: number }[]> 
   ],
 };
 
+// Keyword-based Amdocs persona matching profiles
+const amdocsPersonaKeywords: Record<string, { keywords: string[]; weight: number }[]> = {
+  maya: [
+    { keywords: ['manager', 'team lead', 'leading', 'management', 'supervise', 'busy'], weight: 4 },
+    { keywords: ['40s', 'gen x', 'forties', '47'], weight: 3 },
+    { keywords: ['software', 'engineering', 'developer'], weight: 2 },
+    { keywords: ['stress', 'pressure', 'cascade', 'meetings'], weight: 2 },
+  ],
+  priya: [
+    { keywords: ['junior', 'new', 'young', 'digital', 'fresh', 'graduate'], weight: 4 },
+    { keywords: ['20s', 'gen z', 'twenties', '24', '25'], weight: 4 },
+    { keywords: ['software', 'engineer', 'developer', 'coding'], weight: 2 },
+    { keywords: ['modern', 'short', 'visual', 'video'], weight: 2 },
+  ],
+  anna: [
+    { keywords: ['acquisition', 'acquired', 'merger', 'integration', 'new company'], weight: 5 },
+    { keywords: ['30s', 'gen y', 'millennial', 'thirties'], weight: 3 },
+    { keywords: ['network', 'expert', 'technical'], weight: 2 },
+    { keywords: ['disconnected', 'left out', 'access'], weight: 2 },
+  ],
+  sahil: [
+    { keywords: ['social', 'connector', 'community', 'events', 'networking'], weight: 4 },
+    { keywords: ['20s', '30s', 'gen y', 'millennial', '28'], weight: 3 },
+    { keywords: ['program', 'manager', 'expat', 'remote'], weight: 3 },
+    { keywords: ['fun', 'connection', 'team building'], weight: 2 },
+  ],
+  ido: [
+    { keywords: ['senior', 'veteran', 'experienced', 'skeptical', 'long tenure'], weight: 4 },
+    { keywords: ['50s', 'boomer', 'fifties', '58'], weight: 4 },
+    { keywords: ['manager', 'software', 'engineering'], weight: 2 },
+    { keywords: ['traditional', 'volunteering', 'honest'], weight: 2 },
+  ],
+  ben: [
+    { keywords: ['career', 'ambitious', 'growth', 'advancement', 'climber'], weight: 4 },
+    { keywords: ['30s', 'gen y', 'millennial', '35'], weight: 3 },
+    { keywords: ['marketing', 'product', 'lead'], weight: 3 },
+    { keywords: ['leadership', 'visibility', 'networking'], weight: 2 },
+  ],
+  alex: [
+    { keywords: ['executive', 'business', 'sales', 'customer', 'account'], weight: 4 },
+    { keywords: ['40s', 'gen x', 'forties', '49'], weight: 3 },
+    { keywords: ['busy', 'meetings', 'email', 'mobile'], weight: 3 },
+    { keywords: ['concise', 'short', 'quick'], weight: 2 },
+  ],
+  oliver: [
+    { keywords: ['site', 'leader', 'local', 'service', 'partner'], weight: 4 },
+    { keywords: ['40s', 'gen x', 'forties', '44'], weight: 3 },
+    { keywords: ['mobile', 'engagement', 'recognition'], weight: 3 },
+    { keywords: ['uk', 'europe', 'regional'], weight: 2 },
+  ],
+};
+
+// Reason templates for Amdocs personas
+const amdocsPersonaReasons: Record<string, string[]> = {
+  maya: [
+    "Your profile as a busy manager balancing team needs matches Maya, the Busy Bee Manager.",
+    "Like Maya, you deal with constant pressure and need support to cascade information effectively.",
+  ],
+  priya: [
+    "Your digital-native approach and preference for modern formats matches Priya, the Digital Native.",
+    "Like Priya, you want clear, relevant information about how things impact your role.",
+  ],
+  anna: [
+    "Your experience joining through acquisition matches Anna, the Acquired Talent.",
+    "Like Anna, you navigate the challenges of integrating into a new company culture.",
+  ],
+  sahil: [
+    "Your focus on social connection and events matches Sahil, the Social Connector.",
+    "Like Sahil, you value face-to-face interaction and building community.",
+  ],
+  ido: [
+    "Your extensive experience and thoughtful approach matches Ido, the Skeptical Veteran.",
+    "Like Ido, you value honesty and sincerity over corporate messaging.",
+  ],
+  ben: [
+    "Your career-focused mindset matches Ben, the Career Climber.",
+    "Like Ben, you're driven by growth and leadership opportunities.",
+  ],
+  alex: [
+    "Your busy, customer-focused role matches Alex, the Business Executive.",
+    "Like Alex, you need concise, actionable information delivered efficiently.",
+  ],
+  oliver: [
+    "Your site leadership role matches Oliver, the Site Leader.",
+    "Like Oliver, you're a go-to person who values mobile-friendly, concise communications.",
+  ],
+};
+
 // Reason templates for each persona
 const personaReasons: Record<string, string[]> = {
   sarah: [
@@ -84,12 +173,17 @@ const personaReasons: Record<string, string[]> = {
 };
 
 // Smart keyword-based matching function
-function matchPersonaByKeywords(text: string): { personaId: string; confidence: number; reason: string } {
+function matchPersonaByKeywords(text: string, personaSet: 'amdocs' | 'mock' = 'amdocs'): { personaId: string; confidence: number; reason: string } {
   const lowerText = text.toLowerCase();
   const scores: Record<string, number> = {};
   
+  // Select the correct keyword map and reasons based on persona set
+  const keywordMap = personaSet === 'amdocs' ? amdocsPersonaKeywords : personaKeywords;
+  const reasonMap = personaSet === 'amdocs' ? amdocsPersonaReasons : personaReasons;
+  const personaList = personaSet === 'amdocs' ? amdocsPersonas : personas;
+  
   // Calculate scores for each persona
-  for (const [personaId, keywordGroups] of Object.entries(personaKeywords)) {
+  for (const [personaId, keywordGroups] of Object.entries(keywordMap)) {
     scores[personaId] = 0;
     
     for (const group of keywordGroups) {
@@ -118,32 +212,36 @@ function matchPersonaByKeywords(text: string): { personaId: string; confidence: 
     confidence = Math.min(0.75, 0.55 + topScore * 0.04);
   }
   
-  const reasons = personaReasons[topPersonaId] || ["Based on your work style description."];
+  const reasons = reasonMap[topPersonaId] || ["Based on your work style description."];
   const reason = reasons[Math.floor(Math.random() * reasons.length)];
   
   return {
-    personaId: topScore > 0 ? topPersonaId : personas[Math.floor(Math.random() * personas.length)].id,
+    personaId: topScore > 0 ? topPersonaId : personaList[Math.floor(Math.random() * personaList.length)].id,
     confidence: Math.round(confidence * 100) / 100,
     reason,
   };
 }
 
 // Build persona summaries for AI prompt
-const personaSummaries = personas.map(p => 
-  `${p.id}: ${p.name} - "${p.title}" (${p.generation}, ${p.role})
+function buildPersonaSummaries(personaList: typeof personas) {
+  return personaList.map(p => 
+    `${p.id}: ${p.name} - "${p.title}" (${p.generation}, ${p.role})
    Quote: "${p.quote}"
    Stress: ${p.psychology.stress}
    Motivation: ${p.psychology.motivation}
    Pain Points: ${p.psychology.painPoints.join(', ')}`
-).join('\n\n');
+  ).join('\n\n');
+}
 
-const SYSTEM_PROMPT = `You are an expert at matching people to workplace persona profiles. 
+function buildSystemPrompt(personaList: typeof personas) {
+  const summaries = buildPersonaSummaries(personaList);
+  return `You are an expert at matching people to workplace persona profiles. 
 Based on the user's description of their work style, frustrations, and preferences, 
 determine which persona matches them best.
 
 Here are the available personas:
 
-${personaSummaries}
+${summaries}
 
 INSTRUCTIONS:
 1. Analyze the user's message for key traits: communication preferences, frustrations, motivations, and work style
@@ -152,13 +250,14 @@ INSTRUCTIONS:
 {"personaId": "id_here", "confidence": 0.85, "reason": "Brief 1-2 sentence explanation"}
 
 IMPORTANT: 
-- personaId must be one of: ${personas.map(p => p.id).join(', ')}
+- personaId must be one of: ${personaList.map(p => p.id).join(', ')}
 - confidence should be between 0.5 and 0.95
 - Keep the reason concise (1-2 sentences max)`;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { userText, context } = await request.json();
+    const { userText, context, personaSet = 'amdocs' } = await request.json();
 
     if (!userText) {
       return NextResponse.json(
@@ -168,6 +267,10 @@ export async function POST(request: NextRequest) {
     }
 
     const fullText = context ? `${context}\n${userText}` : userText;
+    
+    // Select the correct persona list based on persona set
+    const personaList = personaSet === 'amdocs' ? amdocsPersonas : personas;
+    const systemPrompt = buildSystemPrompt(personaList);
 
     // Try AI-based matching first (Gemini or Ollama)
     const canUseAI = isGeminiAvailable() || await isOllamaAvailable();
@@ -175,7 +278,7 @@ export async function POST(request: NextRequest) {
     if (canUseAI) {
       try {
         const { text: aiResponse, provider } = await generateText(
-          SYSTEM_PROMPT,
+          systemPrompt,
           `User description: ${fullText}\n\nRespond with JSON only:`
         );
 
@@ -185,7 +288,7 @@ export async function POST(request: NextRequest) {
           const parsed = JSON.parse(jsonMatch[0]);
           
           // Validate the persona ID
-          const validIds = personas.map(p => p.id);
+          const validIds = personaList.map(p => p.id);
           if (validIds.includes(parsed.personaId)) {
             return NextResponse.json({
               personaId: parsed.personaId,
@@ -201,7 +304,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fallback: Smart keyword-based matching
-    const keywordMatch = matchPersonaByKeywords(fullText);
+    const keywordMatch = matchPersonaByKeywords(fullText, personaSet);
     
     return NextResponse.json({
       ...keywordMatch,
@@ -211,7 +314,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Persona match API error:', error);
     
-    const fallbackMatch = matchPersonaByKeywords('general workplace');
+    const fallbackMatch = matchPersonaByKeywords('general workplace', 'amdocs');
     return NextResponse.json({
       ...fallbackMatch,
       source: 'fallback',
