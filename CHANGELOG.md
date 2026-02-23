@@ -9,6 +9,11 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-02-23
+
+- feat: remove suggestion buttons from persona finder (#18) by @yardendek-alt
+
+
 ## [0.0.1] - 2026-02-23
 
 - Fix/changelog fallback (#17) by @yardendek-alt
