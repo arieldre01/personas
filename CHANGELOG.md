@@ -9,6 +9,11 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ## [Unreleased]
 
+## [0.0.1] - 2026-02-23
+
+- Fix/changelog fallback (#17) by @yardendek-alt
+
+
 ### 2025-01-21 - Amdocs Personas
 
 #### Added (Time: ~18:00 UTC)
