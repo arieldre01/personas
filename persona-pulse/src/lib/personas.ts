@@ -330,19 +330,39 @@ const amdocsImageMap: Record<string, { src: string; position?: string }> = {
   oliver: { src: '/images/personas/Oliver_0.png', position: 'center top' },
 };
 
+// Mock personas use professional placeholder images
+const mockImageMap: Record<string, { src: string; position?: string }> = {
+  sarah: { src: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=face', position: 'center' },
+  marcus: { src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face', position: 'center' },
+  david: { src: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face', position: 'center' },
+  zoe: { src: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face', position: 'center' },
+  elena: { src: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop&crop=face', position: 'center' },
+  jayden: { src: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&h=200&fit=crop&crop=face', position: 'center' },
+  robert: { src: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&crop=face', position: 'center' },
+  amanda: { src: 'https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=200&h=200&fit=crop&crop=face', position: 'center' },
+};
+
 // Helper function to get image URL for a persona
 export function getPersonaImage(persona: Persona): string {
   // Check if persona has a local image (Amdocs personas)
-  const imageData = amdocsImageMap[persona.id];
-  if (imageData?.src) {
-    return imageData.src;
+  const amdocsImage = amdocsImageMap[persona.id];
+  if (amdocsImage?.src) {
+    return amdocsImage.src;
   }
-  // Fall back to UI Avatars for mock personas
+  // Check if persona has a mock image
+  const mockImage = mockImageMap[persona.id];
+  if (mockImage?.src) {
+    return mockImage.src;
+  }
+  // Fall back to UI Avatars for any other personas
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(persona.name)}&size=200&background=random&color=fff&bold=true`;
 }
 
 // Helper function to get image position for a persona (for object-position CSS)
 export function getPersonaImagePosition(persona: Persona): string {
-  const imageData = amdocsImageMap[persona.id];
-  return imageData?.position || 'center';
+  const amdocsImage = amdocsImageMap[persona.id];
+  if (amdocsImage?.position) return amdocsImage.position;
+  const mockImage = mockImageMap[persona.id];
+  if (mockImage?.position) return mockImage.position;
+  return 'center';
 }
