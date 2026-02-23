@@ -328,6 +328,7 @@ const amdocsImageMap: Record<string, { src: string; position?: string }> = {
   ben: { src: '/images/personas/Ben_0.png', position: 'center top' },
   alex: { src: '/images/personas/Alex_0.png', position: 'center top' },
   oliver: { src: '/images/personas/Oliver_0.png', position: 'center top' },
+  mateo: { src: '/images/personas/Mateo_0.png', position: 'center top' },
 };
 
 // Mock personas use professional placeholder images

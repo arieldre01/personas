@@ -344,9 +344,9 @@ export function PersonaChat({ persona }: PersonaChatProps) {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-[400px]">
+    <div className="flex flex-col h-full max-h-full overflow-hidden">
       {/* Status indicator */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b text-xs">
+      <div className="flex-shrink-0 flex items-center justify-between px-3 py-1.5 border-b text-xs">
         <div className="flex items-center gap-2">
           {providerStatus === 'checking' ? (
             <>
@@ -405,7 +405,8 @@ export function PersonaChat({ persona }: PersonaChatProps) {
       {/* Messages */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 scroll-smooth"
+        className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+        style={{ minHeight: 0 }}
       >
         {/* Empty State - shown when only initial greeting exists */}
         {messages.length === 1 && !isTyping && (
@@ -518,14 +519,14 @@ export function PersonaChat({ persona }: PersonaChatProps) {
       </div>
 
       {/* Quick Suggestions + Input - grouped together */}
-      <div className="flex-shrink-0 border-t bg-gray-50 dark:bg-gray-900/50 px-5 pt-3 pb-5">
-        {/* Suggestions */}
+      <div className="flex-shrink-0 border-t bg-gray-50 dark:bg-gray-900/50 px-4 pt-2 pb-2">
+        {/* Suggestions - more compact */}
         {!isTyping && (
-          <div className="mb-3">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+          <div className="mb-2">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">
               {messages.length <= 1 ? 'Quick questions:' : 'Follow up:'}
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {getContextualSuggestions(persona, messages).map((suggestion, index) => (
                 <button
                   key={index}
@@ -536,7 +537,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
                     sendMessage(suggestion);
                   }}
                   title="Click to fill, double-click to send"
-                  className={`text-xs px-3 py-1.5 rounded-full border transition-all hover:scale-105 active:scale-95 ${colors.bg} ${colors.text} hover:shadow-sm cursor-pointer select-none`}
+                  className={`text-[11px] px-2.5 py-1 rounded-full border transition-all hover:scale-105 active:scale-95 ${colors.bg} ${colors.text} hover:shadow-sm cursor-pointer select-none`}
                 >
                   {suggestion}
                 </button>
@@ -552,7 +553,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className={`min-h-[48px] max-h-[120px] resize-none text-sm py-2.5 px-3 ${isListening ? 'border-red-400 dark:border-red-500' : ''}`}
+            className={`min-h-[40px] max-h-[80px] resize-none text-sm py-2 px-3 ${isListening ? 'border-red-400 dark:border-red-500' : ''}`}
             rows={1}
             disabled={isListening}
           />
@@ -563,7 +564,7 @@ export function PersonaChat({ persona }: PersonaChatProps) {
               onClick={handleMicClick}
               size="icon"
               variant={isListening ? "destructive" : "outline"}
-              className={`h-[48px] w-[48px] rounded-lg transition-all ${
+              className={`h-[40px] w-[40px] rounded-lg transition-all ${
                 isListening 
                   ? 'mic-pulse bg-red-500 hover:bg-red-600 border-red-500' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -572,9 +573,9 @@ export function PersonaChat({ persona }: PersonaChatProps) {
               disabled={isTyping}
             >
               {isListening ? (
-                <MicOff className="h-5 w-5" />
+                <MicOff className="h-4 w-4" />
               ) : (
-                <Mic className="h-5 w-5" />
+                <Mic className="h-4 w-4" />
               )}
             </Button>
           )}
@@ -583,12 +584,12 @@ export function PersonaChat({ persona }: PersonaChatProps) {
             onClick={handleSend}
             disabled={!input.trim() || isTyping || isListening}
             size="icon"
-            className={`${colors.badge} h-[48px] w-[48px] rounded-lg`}
+            className={`${colors.badge} h-[40px] w-[40px] rounded-lg`}
           >
             {isTyping ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Send className="h-5 w-5" />
+              <Send className="h-4 w-4" />
             )}
           </Button>
         </div>

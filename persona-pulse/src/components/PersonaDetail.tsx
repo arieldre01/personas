@@ -58,7 +58,7 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="h-[90vh] max-h-[900px] max-w-3xl overflow-hidden flex flex-col p-0">
+      <DialogContent className="h-[88vh] max-h-[800px] max-w-3xl overflow-hidden flex flex-col p-0">
         <div className={`flex-shrink-0 ${colors.bg} px-4 py-3 relative`}>
           <Button
             variant="ghost"
@@ -114,7 +114,7 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
               setSelectedScenario(null);
             }
           }}
-          className="flex-1 flex flex-col min-h-0 px-4"
+          className="flex-1 flex flex-col min-h-0 px-4 pb-4"
         >
           <TabsList className="grid w-full grid-cols-3 flex-shrink-0 mt-2 h-9">
             <TabsTrigger value="profile" className="flex items-center gap-1.5 text-xs py-1.5">
@@ -225,7 +225,7 @@ export function PersonaDetail({ persona, open, onClose }: PersonaDetailProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="chat" className="flex-1 min-h-0 mt-2 flex flex-col overflow-hidden">
+          <TabsContent value="chat" className="flex-1 mt-2 overflow-hidden" style={{ minHeight: 0, display: 'flex', flexDirection: 'column' }}>
             <PersonaChat persona={persona} />
           </TabsContent>
 
