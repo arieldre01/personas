@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChatMessage, Message } from './ChatMessage';
 import { Persona, personas, getPersonaById } from '@/lib/personas';
+import { amdocsPersonas } from '@/lib/amdocs-personas';
 import { Loader2, Send } from 'lucide-react';
 
 interface FinderGuidedProps {
   onPersonaMatch: (persona: Persona) => void;
+  personaSet?: 'amdocs' | 'mock';
 }
 
 // Guided discovery questions
@@ -53,7 +55,8 @@ const guidedQuestions = [
   },
 ];
 
-export function FinderGuided({ onPersonaMatch }: FinderGuidedProps) {
+export function FinderGuided({ onPersonaMatch, personaSet = 'amdocs' }: FinderGuidedProps) {
+  const activePersonas = personaSet === 'amdocs' ? amdocsPersonas : personas;
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentOptions, setCurrentOptions] = useState<string[]>([]);
@@ -118,6 +121,7 @@ export function FinderGuided({ onPersonaMatch }: FinderGuidedProps) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userText: `Based on these answers about work preferences:\n\n${summaryText}\n\nFind the best matching persona.`,
+            personaSet,
           }),
         });
 
@@ -137,12 +141,12 @@ export function FinderGuided({ onPersonaMatch }: FinderGuidedProps) {
           }
         } else {
           // Fallback
-          const fallbackPersona = personas[Math.floor(Math.random() * personas.length)];
+          const fallbackPersona = activePersonas[Math.floor(Math.random() * activePersonas.length)];
           setMatchedPersona(fallbackPersona);
         }
       } catch (error) {
         console.error('Persona match error:', error);
-        const fallbackPersona = personas[0];
+        const fallbackPersona = activePersonas[0];
         setMatchedPersona(fallbackPersona);
       }
 

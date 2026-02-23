@@ -18,9 +18,10 @@ interface PersonaFinderProps {
   open: boolean;
   onClose: () => void;
   onPersonaMatch: (persona: Persona) => void;
+  personaSet?: 'amdocs' | 'mock';
 }
 
-export function PersonaFinder({ open, onClose, onPersonaMatch }: PersonaFinderProps) {
+export function PersonaFinder({ open, onClose, onPersonaMatch, personaSet = 'amdocs' }: PersonaFinderProps) {
   const [activeTab, setActiveTab] = useState<'guided' | 'freeform'>('freeform');
   const [key, setKey] = useState(0);
 
@@ -72,11 +73,11 @@ export function PersonaFinder({ open, onClose, onPersonaMatch }: PersonaFinderPr
 
           <div className="flex-1 min-h-0 overflow-hidden">
             <TabsContent value="freeform" className="h-full mt-0 data-[state=active]:flex data-[state=active]:flex-col overflow-hidden">
-              <FinderFreeform key={`freeform-${key}`} onPersonaMatch={handlePersonaMatch} />
+              <FinderFreeform key={`freeform-${key}`} onPersonaMatch={handlePersonaMatch} personaSet={personaSet} />
             </TabsContent>
 
             <TabsContent value="guided" className="h-full mt-0 data-[state=active]:flex data-[state=active]:flex-col overflow-hidden">
-              <FinderGuided key={`guided-${key}`} onPersonaMatch={handlePersonaMatch} />
+              <FinderGuided key={`guided-${key}`} onPersonaMatch={handlePersonaMatch} personaSet={personaSet} />
             </TabsContent>
           </div>
         </Tabs>
