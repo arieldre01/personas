@@ -12,14 +12,6 @@ interface FinderFreeformProps {
   personaSet?: 'amdocs' | 'mock';
 }
 
-// Conversation prompts to help users who get stuck
-const conversationStarters = [
-  "What's your job role?",
-  "How long have you been at the company?",
-  "Are you mostly at a desk or on the go?",
-  "Do you manage people?",
-];
-
 export function FinderFreeform({ onPersonaMatch, personaSet = 'amdocs' }: FinderFreeformProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -95,11 +87,6 @@ export function FinderFreeform({ onPersonaMatch, personaSet = 'amdocs' }: Finder
     }
   };
 
-  const handleStarterClick = (starter: string) => {
-    setInput(starter);
-    textareaRef.current?.focus();
-  };
-
   const handleTryAgain = () => {
     setMessages([]);
     setMatchedPersona(null);
@@ -114,26 +101,10 @@ export function FinderFreeform({ onPersonaMatch, personaSet = 'amdocs' }: Finder
             <PenLine className="h-8 w-8 text-teal-600 dark:text-teal-400" />
           </div>
           <h3 className="mb-2 text-xl font-semibold">Tell Us About Yourself</h3>
-          <p className="mb-4 max-w-md text-gray-600 dark:text-gray-400">
+          <p className="mb-6 max-w-md text-gray-600 dark:text-gray-400">
             Describe yourself: your job role, how long you&apos;ve been working, whether you manage people, 
             if you work at a desk or on the go, your age group, etc.
           </p>
-          
-          {/* Quick prompts */}
-          <div className="mb-4 w-full max-w-md">
-            <p className="text-xs text-gray-500 mb-2">Need inspiration? Try one of these:</p>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {conversationStarters.map((starter, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleStarterClick(starter)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-gray-700 dark:text-gray-300 transition-colors"
-                >
-                  {starter}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50/50 dark:bg-gray-900/50">
