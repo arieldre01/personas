@@ -70,35 +70,32 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       
       - name: Add version and author to changelog
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          AI_ENTRY: ${{ steps.ai_entry.outputs.entry }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          NEW_VERSION="${{ steps.version.outputs.new_version }}"
-          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-          PR_NUMBER="${{ github.event.pull_request.number }}"
           DATE=$(date +'%Y-%m-%d')
           
-          # Read the AI-generated entry
-          AI_ENTRY="${{ steps.ai_entry.outputs.entry }}"
-          
-          # If AI entry is empty, use PR title as fallback
-          if [ -z "$AI_ENTRY" ]; then
-            AI_ENTRY="${{ github.event.pull_request.title }}"
-          fi
-          
-          # Create the versioned entry with author
-          NEW_SECTION=$(printf "## [%s] - %s\n\n- %s (#%s) by @%s\n" "$NEW_VERSION" "$DATE" "$AI_ENTRY" "$PR_NUMBER" "$PR_AUTHOR")
+          # Use AI entry or fall back to PR title
+          ENTRY="${AI_ENTRY:-$PR_TITLE}"
           
           # Find where to insert (after header, before first version)
           HEADER_END=$(grep -n "^## \[" CHANGELOG.md | head -1 | cut -d: -f1)
           
           if [ -n "$HEADER_END" ]; then
             # Remove the entry that generate_changelog.py added (it's under Unreleased)
-            # Then insert our versioned entry
             sed -i '/^## \[Unreleased\]/,/^## \[/{ /^- /d; }' CHANGELOG.md
             
             # Insert new versioned section
             head -n $((HEADER_END - 1)) CHANGELOG.md > CHANGELOG.tmp
             echo "" >> CHANGELOG.tmp
-            echo "$NEW_SECTION" >> CHANGELOG.tmp
+            echo "## [${NEW_VERSION}] - ${DATE}" >> CHANGELOG.tmp
+            echo "" >> CHANGELOG.tmp
+            echo "- ${ENTRY} (#${PR_NUMBER}) by @${PR_AUTHOR}" >> CHANGELOG.tmp
+            echo "" >> CHANGELOG.tmp
             tail -n +$HEADER_END CHANGELOG.md >> CHANGELOG.tmp
             mv CHANGELOG.tmp CHANGELOG.md
           fi
