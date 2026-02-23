@@ -84,10 +84,7 @@ jobs:
           fi
           
           # Create the versioned entry with author
-          NEW_SECTION="## [${NEW_VERSION}] - ${DATE}
-
-- ${AI_ENTRY} (#${PR_NUMBER}) by @${PR_AUTHOR}
-"
+          NEW_SECTION=$(printf "## [%s] - %s\n\n- %s (#%s) by @%s\n" "$NEW_VERSION" "$DATE" "$AI_ENTRY" "$PR_NUMBER" "$PR_AUTHOR")
           
           # Find where to insert (after header, before first version)
           HEADER_END=$(grep -n "^## \[" CHANGELOG.md | head -1 | cut -d: -f1)
