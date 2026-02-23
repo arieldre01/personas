@@ -13,6 +13,7 @@ import { useSpeechRecognition } from '@/lib/use-speech-recognition';
 interface MultiPersonaChatProps {
   open: boolean;
   onClose: () => void;
+  initialPersonas?: Persona[];
 }
 
 interface PersonaResponse {
@@ -33,8 +34,15 @@ interface Conversation {
 const generations: Generation[] = ['Gen Z', 'Gen Y', 'Gen X', 'Boomer'];
 const MAX_HISTORY = 3; // Keep last 3 conversations
 
-export function MultiPersonaChat({ open, onClose }: MultiPersonaChatProps) {
+export function MultiPersonaChat({ open, onClose, initialPersonas }: MultiPersonaChatProps) {
   const [selectedPersonas, setSelectedPersonas] = useState<Set<string>>(new Set());
+  
+  // Initialize with passed personas when dialog opens
+  useEffect(() => {
+    if (open && initialPersonas && initialPersonas.length > 0) {
+      setSelectedPersonas(new Set(initialPersonas.map(p => p.id)));
+    }
+  }, [open, initialPersonas]);
   const [input, setInput] = useState('');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isAsking, setIsAsking] = useState(false);

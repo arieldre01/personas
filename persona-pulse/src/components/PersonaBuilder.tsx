@@ -359,12 +359,12 @@ export function PersonaBuilder({ open, onClose, onSave, editPersona }: PersonaBu
         </DialogHeader>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-6 px-2">
+        <div className="flex items-center justify-center gap-1 mb-6 px-2 overflow-x-auto">
           {STEPS.map((step, index) => (
-            <div key={step} className="flex items-center">
+            <div key={step} className="flex items-center flex-shrink-0">
               <button
                 onClick={() => setCurrentStep(step)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all ${
                   step === currentStep
                     ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
                     : index < currentStepIndex
@@ -373,10 +373,10 @@ export function PersonaBuilder({ open, onClose, onSave, editPersona }: PersonaBu
                 }`}
               >
                 {STEP_ICONS[step]}
-                <span className="text-sm font-medium hidden sm:inline">{STEP_TITLES[step]}</span>
+                <span className="text-xs font-medium hidden md:inline">{STEP_TITLES[step]}</span>
               </button>
               {index < STEPS.length - 1 && (
-                <div className={`w-8 h-0.5 mx-1 ${
+                <div className={`w-4 h-0.5 mx-0.5 ${
                   index < currentStepIndex ? 'bg-green-400' : 'bg-gray-200 dark:bg-gray-700'
                 }`} />
               )}
