@@ -57,12 +57,13 @@ jobs:
       
       - name: Generate changelog entry with AI
         id: ai_entry
+        continue-on-error: true
         run: |
-          # Run your changelog generator
-          python generate_changelog.py --ci
+          # Run your changelog generator (may fail if AI unavailable)
+          python generate_changelog.py --ci || true
           
-          # Extract the latest entry that was added
-          ENTRY=$(head -20 CHANGELOG.md | grep "^- " | head -1 | sed 's/^- //')
+          # Extract the latest entry that was added (if any)
+          ENTRY=$(head -20 CHANGELOG.md | grep "^- " | head -1 | sed 's/^- //' || echo "")
           echo "entry=$ENTRY" >> $GITHUB_OUTPUT
         env:
           GITHUB_ACTIONS: true
