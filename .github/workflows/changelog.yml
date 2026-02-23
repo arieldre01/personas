@@ -74,34 +74,40 @@ jobs:
           NEW_VERSION: ${{ steps.version.outputs.new_version }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          AI_ENTRY: ${{ steps.ai_entry.outputs.entry }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          DATE=$(date +'%Y-%m-%d')
-          
-          # Use AI entry or fall back to PR title
-          ENTRY="${AI_ENTRY:-$PR_TITLE}"
-          
-          # Find where to insert (after header, before first version)
-          HEADER_END=$(grep -n "^## \[" CHANGELOG.md | head -1 | cut -d: -f1)
-          
-          if [ -n "$HEADER_END" ]; then
-            # Remove the entry that generate_changelog.py added (it's under Unreleased)
-            sed -i '/^## \[Unreleased\]/,/^## \[/{ /^- /d; }' CHANGELOG.md
-            
-            # Insert new versioned section
-            head -n $((HEADER_END - 1)) CHANGELOG.md > CHANGELOG.tmp
-            echo "" >> CHANGELOG.tmp
-            echo "## [${NEW_VERSION}] - ${DATE}" >> CHANGELOG.tmp
-            echo "" >> CHANGELOG.tmp
-            echo "- ${ENTRY} (#${PR_NUMBER}) by @${PR_AUTHOR}" >> CHANGELOG.tmp
-            echo "" >> CHANGELOG.tmp
-            tail -n +$HEADER_END CHANGELOG.md >> CHANGELOG.tmp
-            mv CHANGELOG.tmp CHANGELOG.md
-          fi
-          
-          echo "Updated CHANGELOG.md:"
-          head -30 CHANGELOG.md
+          python3 << 'SCRIPT'
+          import os
+          import re
+          from datetime import datetime
+
+          version = os.environ.get('NEW_VERSION', '0.0.1')
+          author = os.environ.get('PR_AUTHOR', 'unknown')
+          pr_number = os.environ.get('PR_NUMBER', '0')
+          pr_title = os.environ.get('PR_TITLE', 'Update')
+          date = datetime.now().strftime('%Y-%m-%d')
+
+          # Read current changelog
+          with open('CHANGELOG.md', 'r') as f:
+              content = f.read()
+
+          # Remove any entries under [Unreleased]
+          content = re.sub(r'(## \[Unreleased\].*?)(^- .+$\n?)+', r'\1', content, flags=re.MULTILINE)
+
+          # Find where to insert (before first version heading)
+          match = re.search(r'^## \[Unreleased\].*$', content, re.MULTILINE)
+          if match:
+              insert_pos = match.end()
+              new_entry = f"\n\n## [{version}] - {date}\n\n- {pr_title} (#{pr_number}) by @{author}\n"
+              content = content[:insert_pos] + new_entry + content[insert_pos:]
+
+          # Write updated changelog
+          with open('CHANGELOG.md', 'w') as f:
+              f.write(content)
+
+          print("Updated CHANGELOG.md:")
+          print(content[:1500])
+          SCRIPT
       
       - name: Commit and push changelog
         run: |
