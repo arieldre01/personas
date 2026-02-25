@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         GROQ_API_KEY = credentials('groq-api-key')
+        GITHUB_CREDENTIALS = credentials('github-token1')
     }
 
     triggers {
