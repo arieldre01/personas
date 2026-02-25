@@ -9,6 +9,11 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-25
+
+- feat: add Jenkinsfile for CI/CD pipeline (#19) by @yardendek-alt
+
+
 ## [0.1.0] - 2026-02-23
 
 - feat: remove suggestion buttons from persona finder (#18) by @yardendek-alt
