@@ -114,7 +114,7 @@ export default function Home() {
         }
         break;
     }
-  }, [detailOpen, finderOpen, builderOpen, focusedIndex, allPersonas]);
+  }, [detailOpen, finderOpen, builderOpen, focusedIndex, filteredPersonas]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
