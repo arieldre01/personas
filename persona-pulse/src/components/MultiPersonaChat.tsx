@@ -14,6 +14,7 @@ interface MultiPersonaChatProps {
   open: boolean;
   onClose: () => void;
   initialPersonas?: Persona[];
+  availablePersonas?: Persona[];
 }
 
 interface PersonaResponse {
@@ -34,7 +35,7 @@ interface Conversation {
 const generations: Generation[] = ['Gen Z', 'Gen Y', 'Gen X', 'Boomer'];
 const MAX_HISTORY = 3; // Keep last 3 conversations
 
-export function MultiPersonaChat({ open, onClose, initialPersonas }: MultiPersonaChatProps) {
+export function MultiPersonaChat({ open, onClose, initialPersonas, availablePersonas }: MultiPersonaChatProps) {
   const [selectedPersonas, setSelectedPersonas] = useState<Set<string>>(new Set());
   
   // Initialize with passed personas when dialog opens
@@ -108,8 +109,8 @@ export function MultiPersonaChat({ open, onClose, initialPersonas }: MultiPerson
     if (open) checkAI();
   }, [open]);
 
-  // All available personas
-  const allPersonas = amdocsPersonas;
+  // All available personas — use passed-in list (respects persona set + custom) or fall back to amdocs
+  const allPersonas = availablePersonas ?? amdocsPersonas;
 
   // Scroll to bottom when new responses come in
   useEffect(() => {

@@ -11,11 +11,11 @@ import { MultiPersonaChat } from '@/components/MultiPersonaChat';
 import { TeamGrid } from '@/components/TeamGrid';
 import { TeamBuilder } from '@/components/TeamBuilder';
 import { TeamDetail } from '@/components/TeamDetail';
-import { personas, Persona, generationColors } from '@/lib/personas';
+import { personas, Persona, generationColors, Generation } from '@/lib/personas';
 import { amdocsPersonas } from '@/lib/amdocs-personas';
 import { getCustomPersonas, CustomPersona, deleteCustomPersona } from '@/lib/custom-personas';
 import { Team, getTeams, deleteTeam } from '@/lib/teams';
-import { Compass, Users, Sparkles, Github, Plus, Building2, FlaskConical, MessageCircle, UsersRound, User } from 'lucide-react';
+import { Compass, Users, Sparkles, Github, Plus, Building2, FlaskConical, MessageCircle, UsersRound, User, Search, X } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 type PersonaSet = 'amdocs' | 'mock';
@@ -41,6 +41,10 @@ export default function Home() {
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [groupChatPersonas, setGroupChatPersonas] = useState<Persona[]>([]);
 
+  // Search & filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterGeneration, setFilterGeneration] = useState<Generation | 'All'>('All');
+
   // Load custom personas and teams on mount
   useEffect(() => {
     setCustomPersonas(getCustomPersonas());
@@ -52,6 +56,17 @@ export default function Home() {
   
   // Merge base and custom personas
   const allPersonas = [...basePersonas, ...customPersonas] as Persona[];
+
+  // Filtered personas for the grid
+  const filteredPersonas = allPersonas.filter(p => {
+    const matchesGen = filterGeneration === 'All' || p.generation === filterGeneration;
+    const matchesSearch = !searchQuery ||
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.role.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesGen && matchesSearch;
+  });
+
+  const hasActiveFilters = searchQuery !== '' || filterGeneration !== 'All';
 
   // Calculate grid columns based on screen size (matching the grid layout)
   const getColumnsCount = () => {
@@ -384,14 +399,87 @@ export default function Home() {
         </div>
 
         {viewMode === 'personas' ? (
-          <PersonaGrid 
-            personas={allPersonas} 
-            onSelectPersona={handleSelectPersona}
-            focusedIndex={focusedIndex}
-            onFocusChange={setFocusedIndex}
-            onEditPersona={handleEditPersona}
-            onDeletePersona={handleDeletePersona}
-          />
+          <>
+            {/* Search & Filter Bar */}
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+              {/* Search input */}
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by name or role..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 dark:focus:ring-purple-600 transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Generation pills */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  onClick={() => setFilterGeneration('All')}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${
+                    filterGeneration === 'All'
+                      ? 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 border-gray-800 dark:border-gray-100'
+                      : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-400'
+                  }`}
+                >
+                  All
+                </button>
+                {(['Gen Z', 'Gen Y', 'Gen X', 'Boomer'] as Generation[]).map(gen => {
+                  const colors = generationColors[gen];
+                  const active = filterGeneration === gen;
+                  return (
+                    <button
+                      key={gen}
+                      onClick={() => setFilterGeneration(active ? 'All' : gen)}
+                      className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${
+                        active
+                          ? `${colors.badge} text-white border-transparent`
+                          : `bg-white dark:bg-gray-900 ${colors.border} ${colors.text} hover:${colors.bg}`
+                      }`}
+                    >
+                      {gen}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Result count + reset */}
+              <div className="flex items-center gap-2 ml-auto shrink-0">
+                {hasActiveFilters && (
+                  <>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {filteredPersonas.length} of {allPersonas.length}
+                    </span>
+                    <button
+                      onClick={() => { setSearchQuery(''); setFilterGeneration('All'); }}
+                      className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
+                    >
+                      Reset
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <PersonaGrid 
+              personas={filteredPersonas} 
+              onSelectPersona={handleSelectPersona}
+              focusedIndex={focusedIndex}
+              onFocusChange={setFocusedIndex}
+              onEditPersona={handleEditPersona}
+              onDeletePersona={handleDeletePersona}
+            />
+          </>
         ) : (
           <TeamGrid
             teams={teams}
@@ -451,6 +539,7 @@ export default function Home() {
           setGroupChatPersonas([]);
         }}
         initialPersonas={groupChatPersonas}
+        availablePersonas={allPersonas}
       />
 
       <TeamBuilder
