@@ -223,33 +223,19 @@ export function PersonaChat({ persona }: PersonaChatProps) {
         }]);
         setIsTyping(false);
 
-        // Read the SSE stream with natural typing delay
+        // Read the SSE stream and render via requestAnimationFrame for smooth 60fps updates
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        const tokenQueue: string[] = [];
-        let isProcessingQueue = false;
-        let displayedContent = '';
+        let accumulatedContent = '';
+        let rafId: number | null = null;
 
-        // Process tokens with a natural typing delay
-        const processTokenQueue = async () => {
-          if (isProcessingQueue) return;
-          isProcessingQueue = true;
-
-          while (tokenQueue.length > 0) {
-            const token = tokenQueue.shift()!;
-            displayedContent += token;
-            
-            setMessages((prev) => prev.map((msg) =>
-              msg.id === personaMessageId
-                ? { ...msg, content: displayedContent }
-                : msg
-            ));
-
-            // Fast typing delay: 10-15ms per token (snappy response)
-            await new Promise(resolve => setTimeout(resolve, 10 + Math.random() * 5));
-          }
-
-          isProcessingQueue = false;
+        const flushToDOM = () => {
+          setMessages((prev) => prev.map((msg) =>
+            msg.id === personaMessageId
+              ? { ...msg, content: accumulatedContent }
+              : msg
+          ));
+          rafId = null;
         };
 
         while (true) {
@@ -261,12 +247,13 @@ export function PersonaChat({ persona }: PersonaChatProps) {
 
           for (const line of lines) {
             try {
-              const jsonStr = line.replace('data: ', '');
-              const data = JSON.parse(jsonStr);
-              
+              const data = JSON.parse(line.replace('data: ', ''));
               if (data.token) {
-                tokenQueue.push(data.token);
-                processTokenQueue(); // Start processing if not already
+                accumulatedContent += data.token;
+                // Schedule a DOM update only if one isn't already pending
+                if (!rafId) {
+                  rafId = requestAnimationFrame(flushToDOM);
+                }
               }
             } catch {
               // Skip malformed JSON
@@ -274,10 +261,9 @@ export function PersonaChat({ persona }: PersonaChatProps) {
           }
         }
 
-        // Wait for remaining tokens to be displayed
-        while (tokenQueue.length > 0 || isProcessingQueue) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
+        // Final flush — ensure the last chunk is always rendered
+        if (rafId) cancelAnimationFrame(rafId);
+        flushToDOM();
       } else {
         // API failed - show error message with retry option
         const errorMessageId = personaMessageId;
