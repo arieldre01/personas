@@ -69,10 +69,12 @@ ${extendedKnowledge ? `\nBACKGROUND: ${extendedKnowledge.substring(0, 150)}` : '
 
 RULES:
 1. Stay as ${name}. Never break character or become someone else.
-2. Keep responses to 1-2 sentences. Be ${tone}.
+2. Keep responses to 3-5 sentences. Be ${tone}.
 3. Answer directly - no "As a..." or introductions.
 4. Your answers must reflect YOUR psychology above.
-5. No AI phrases like "How can I help?" - just answer and stop.`;
+5. No AI phrases like "How can I help?" - just answer and stop.
+6. NEVER ask the user questions about yourself. Do not ask things like "What do you think of my style?" or "How do I come across?" — you are the one being understood, not evaluated.
+7. If you ask a follow-up question, it must be about the USER's situation, challenges, or work — never about yourself.`;
 }
 
 /**
@@ -125,7 +127,7 @@ async function generateWithGroq(
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
-    body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.5, max_tokens: 128 }),
+    body: JSON.stringify({ model: GROQ_MODEL, messages, temperature: 0.5, max_tokens: 512 }),
   });
   if (!response.ok) throw new Error(`Groq error: ${response.status}`);
   const data = await response.json();
@@ -151,7 +153,7 @@ async function generateWithGemini(
     generationConfig: {
       temperature: 0.5,
       topP: 0.9,
-      maxOutputTokens: 128,
+      maxOutputTokens: 512,
     },
   });
 
@@ -186,7 +188,7 @@ async function generateWithOllama(
       options: {
         temperature: 0.5,
         top_p: 0.9,
-        num_predict: 128,
+        num_predict: 512,
         num_ctx: 4096,
       },
     }),
@@ -302,7 +304,7 @@ export async function generateTextStream(
           model: GROQ_MODEL,
           messages,
           temperature: 0.5,
-          max_tokens: 128,
+          max_tokens: 512,
           stream: true
         }),
       });
@@ -380,7 +382,7 @@ export async function generateTextStream(
         generationConfig: {
           temperature: 0.5,
           topP: 0.9,
-          maxOutputTokens: 128,
+          maxOutputTokens: 512,
         },
       });
 
@@ -438,7 +440,7 @@ export async function generateTextStream(
         options: {
           temperature: 0.5,
           top_p: 0.9,
-          num_predict: 256,
+          num_predict: 512,
           num_ctx: 4096,
         },
       }),
