@@ -1,6 +1,4 @@
 import { NextRequest } from 'next/server';
-
-export const dynamic = 'force-dynamic';
 import { loadPersonaKnowledge } from '@/lib/persona-knowledge';
 import { getPersonaById } from '@/lib/personas';
 import { personaBackstories } from '@/lib/persona-prompts';
@@ -15,6 +13,8 @@ import {
   buildConversationWindow,
   formatConversationContext,
 } from '@/lib/conversation-manager';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
