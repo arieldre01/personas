@@ -223,19 +223,35 @@ export function PersonaChat({ persona }: PersonaChatProps) {
         }]);
         setIsTyping(false);
 
-        // Read the SSE stream and render via requestAnimationFrame for smooth 60fps updates
+        // Smooth character-by-character animation:
+        // Tokens from the network go into charBuffer, a RAF loop drains it
+        // at a steady rate — smooth even when tokens arrive in bursts.
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let accumulatedContent = '';
-        let rafId: number | null = null;
+        let charBuffer = '';
+        let displayedContent = '';
+        let isAnimating = false;
+        let streamDone = false;
 
-        const flushToDOM = () => {
-          setMessages((prev) => prev.map((msg) =>
-            msg.id === personaMessageId
-              ? { ...msg, content: accumulatedContent }
-              : msg
-          ));
-          rafId = null;
+        const animateChars = () => {
+          if (charBuffer.length > 0) {
+            // Drain faster if we're falling behind so we never lag too far behind
+            const rate = charBuffer.length > 50 ? 6 : charBuffer.length > 15 ? 3 : 1;
+            displayedContent += charBuffer.slice(0, rate);
+            charBuffer = charBuffer.slice(rate);
+
+            setMessages((prev) => prev.map((msg) =>
+              msg.id === personaMessageId
+                ? { ...msg, content: displayedContent }
+                : msg
+            ));
+          }
+
+          if (charBuffer.length > 0 || !streamDone) {
+            requestAnimationFrame(animateChars);
+          } else {
+            isAnimating = false;
+          }
         };
 
         while (true) {
@@ -249,10 +265,10 @@ export function PersonaChat({ persona }: PersonaChatProps) {
             try {
               const data = JSON.parse(line.replace('data: ', ''));
               if (data.token) {
-                accumulatedContent += data.token;
-                // Schedule a DOM update only if one isn't already pending
-                if (!rafId) {
-                  rafId = requestAnimationFrame(flushToDOM);
+                charBuffer += data.token;
+                if (!isAnimating) {
+                  isAnimating = true;
+                  requestAnimationFrame(animateChars);
                 }
               }
             } catch {
@@ -261,9 +277,22 @@ export function PersonaChat({ persona }: PersonaChatProps) {
           }
         }
 
-        // Final flush — ensure the last chunk is always rendered
-        if (rafId) cancelAnimationFrame(rafId);
-        flushToDOM();
+        streamDone = true;
+
+        // Wait for the animation loop to drain the remaining buffer
+        while (isAnimating) {
+          await new Promise(resolve => setTimeout(resolve, 16));
+        }
+
+        // Final hard flush in case any chars were skipped
+        if (charBuffer.length > 0) {
+          displayedContent += charBuffer;
+          setMessages((prev) => prev.map((msg) =>
+            msg.id === personaMessageId
+              ? { ...msg, content: displayedContent }
+              : msg
+          ));
+        }
       } else {
         // API failed - show error message with retry option
         const errorMessageId = personaMessageId;

@@ -1,4 +1,6 @@
 import { NextRequest } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 import { loadPersonaKnowledge } from '@/lib/persona-knowledge';
 import { getPersonaById } from '@/lib/personas';
 import { personaBackstories } from '@/lib/persona-prompts';
@@ -76,8 +78,9 @@ export async function POST(request: NextRequest) {
         return new Response(responseStream, {
           headers: {
             'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-cache, no-transform',
             'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no',
             'X-AI-Provider': provider,
           },
         });
